@@ -1,10 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { Diamond } from './Diamond';
 import { ScoreBoard } from './ScoreBoard';
 import { Hand } from './Hand';
 import { PokerHand } from './PokerCard';
-import { HandDisplay } from './HandDisplay';
+import { HandDisplay, AvailableHandsGuide } from './HandDisplay';
 import { PlayerCardComponent } from './Card';
 
 export function GameBoard() {
@@ -35,6 +35,8 @@ export function GameBoard() {
     startNewInning,
     resetGame,
   } = useGameStore();
+
+  const [showGuide, setShowGuide] = useState(false);
 
   useEffect(() => {
     initGame();
@@ -137,7 +139,17 @@ export function GameBoard() {
               >
                 버리고 새로 뽑기 ({selectedPokerCards.length}장) - {discardsRemaining}회
               </button>
+              
+              <button
+                onClick={() => setShowGuide(!showGuide)}
+                className="px-4 py-3 bg-gray-600 hover:bg-gray-500 text-white rounded-lg font-semibold transition-colors"
+              >
+                {showGuide ? '족보 닫기' : '족보 보기'}
+              </button>
             </div>
+            
+            {/* 족보 가이드 (토글) */}
+            {showGuide && <AvailableHandsGuide selectedCount={selectedPokerCards.length} />}
           </div>
         )}
 
