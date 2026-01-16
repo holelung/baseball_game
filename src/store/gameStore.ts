@@ -6,34 +6,21 @@ import { evaluateHand } from '../game/poker';
 import { starterPlayers } from '../data/starterPlayers';
 
 interface GameActions {
-  // 게임 초기화
   initGame: () => void;
-  
-  // 선수 선택
   selectPlayer: (playerId: string) => void;
-  
-  // 트럼프 카드 선택 토글
   togglePokerCard: (cardId: string) => void;
-  
-  // 선택한 카드로 플레이 실행
+  discardAndDraw: () => void;      // 선택한 카드 버리고 새로 뽑기
   executeSelectedPlay: () => void;
-  
-  // 다음 턴으로 진행
   nextTurn: () => void;
-  
-  // 새 이닝 시작
   startNewInning: () => void;
-  
-  // 카드 다시 뽑기
-  redrawCards: () => void;
-  
-  // 게임 리셋
   resetGame: () => void;
 }
 
 const MAX_INNINGS = 9;
-const INITIAL_REDRAWS = 2;
-const BASE_TARGET_POINTS = 100; // 기본 목표 포인트
+const INITIAL_DISCARDS = 3;          // 이닝당 버리기 횟수
+const MAX_DISCARD_COUNT = 5;         // 한번에 최대 버리기 장수
+const HAND_SIZE = 8;                 // 트럼프 핸드 크기
+const BASE_TARGET_POINTS = 100;
 
 const initialState: GameState = {
   currentInning: 1,
@@ -45,6 +32,7 @@ const initialState: GameState = {
   playerDeck: [],
   playerHand: [],
   selectedPlayer: null,
+  isFirstAtBat: true,
   pokerDeck: [],
   pokerHand: [],
   selectedPokerCards: [],
@@ -52,27 +40,28 @@ const initialState: GameState = {
   phase: 'selectPlayer',
   targetPoints: BASE_TARGET_POINTS,
   inningPoints: 0,
-  redrawsRemaining: INITIAL_REDRAWS,
+  discardsRemaining: INITIAL_DISCARDS,
 };
 
 export const useGameStore = create<GameState & GameActions>((set, get) => ({
   ...initialState,
 
   initGame: () => {
-    // 선수덱 셔플 (최초 1회만, 이후 예측 가능)
     const shuffledPlayers = shuffle([...starterPlayers]);
-    
-    // 트럼프덱 생성 및 셔플
     const shuffledPoker = shuffle(createPokerDeck());
     
-    // 선수 3장 드로우
+    // 최초 3장 드로우
     const { drawn: playerHand, remaining: playerDeck } = drawPlayers(shuffledPlayers, 3);
+    // 트럼프 8장 드로우
+    const { drawn: pokerHand, remaining: pokerDeck } = drawPokerCards(shuffledPoker, HAND_SIZE);
     
     set({
       ...initialState,
       playerDeck,
       playerHand,
-      pokerDeck: shuffledPoker,
+      pokerDeck,
+      pokerHand,
+      isFirstAtBat: true,
       phase: 'selectPlayer',
     });
   },
@@ -81,7 +70,6 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     const state = get();
     if (state.phase !== 'selectPlayer') return;
     
-    // 선택한 선수 찾기
     const selectedPlayer = state.playerHand.find(p => p.id === playerId);
     if (!selectedPlayer) return;
     
@@ -89,15 +77,10 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     const notSelected = state.playerHand.filter(p => p.id !== playerId);
     const newPlayerDeck = returnToDeck(state.playerDeck, notSelected);
     
-    // 트럼프 카드 5장 드로우
-    const { drawn: pokerHand, remaining: pokerDeck } = drawPokerCards(state.pokerDeck, 5);
-    
     set({
       selectedPlayer,
       playerDeck: newPlayerDeck,
       playerHand: [],
-      pokerHand,
-      pokerDeck,
       selectedPokerCards: [],
       phase: 'selectCards',
     });
@@ -110,9 +93,46 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     const newPokerHand = toggleCardSelection(state.pokerHand, cardId);
     const selectedCards = getSelectedCards(newPokerHand);
     
+    // 최대 5장까지만 선택 가능
+    if (selectedCards.length > MAX_DISCARD_COUNT) return;
+    
     set({
       pokerHand: newPokerHand,
       selectedPokerCards: selectedCards,
+    });
+  },
+
+  discardAndDraw: () => {
+    const state = get();
+    if (state.discardsRemaining <= 0) return;
+    if (state.phase !== 'selectCards') return;
+    if (state.selectedPokerCards.length === 0) return;
+    if (state.selectedPokerCards.length > MAX_DISCARD_COUNT) return;
+    
+    // 선택한 카드 제거
+    const remainingHand = state.pokerHand.filter(c => !c.selected);
+    const discardCount = state.selectedPokerCards.length;
+    
+    // 새 카드 뽑기
+    let newPokerDeck = state.pokerDeck;
+    let drawnCards: PokerCard[] = [];
+    
+    if (newPokerDeck.length < discardCount) {
+      // 덱이 부족하면 재셔플
+      newPokerDeck = shuffle(createPokerDeck());
+    }
+    
+    const drawResult = drawPokerCards(newPokerDeck, discardCount);
+    drawnCards = drawResult.drawn;
+    newPokerDeck = drawResult.remaining;
+    
+    const newHand = [...remainingHand, ...drawnCards].map(c => ({ ...c, selected: false }));
+    
+    set({
+      pokerDeck: newPokerDeck,
+      pokerHand: newHand,
+      selectedPokerCards: [],
+      discardsRemaining: state.discardsRemaining - 1,
     });
   },
 
@@ -121,18 +141,12 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     if (state.phase !== 'selectCards') return;
     if (!state.selectedPlayer) return;
     
-    // 선택된 카드가 없으면 전체 핸드로 판정
-    const cardsToEvaluate = state.selectedPokerCards.length > 0 
-      ? state.selectedPokerCards 
-      : state.pokerHand;
+    // 전체 핸드로 족보 판정 (8장)
+    const handResult = evaluateHand(state.pokerHand);
     
-    // 족보 판정
-    const handResult = evaluateHand(cardsToEvaluate);
-    
-    // 플레이 실행
+    // 확률 기반 플레이 실행
     const playResult = executePlay(handResult, state.selectedPlayer, state.bases);
     
-    // 결과 처리
     const isOut = playResult.baseballResult === 'out';
     let newOuts = state.outs;
     let newPhase: GamePhase = 'showResult';
@@ -141,9 +155,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     
     if (isOut) {
       newOuts += 1;
-      // 아웃된 선수는 덱 하단으로
       updatedPlayerDeck = addToBottom(state.playerDeck, state.selectedPlayer);
-      
       if (newOuts >= 3) {
         newPhase = 'inningEnd';
       }
@@ -151,10 +163,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       // 안타 시 베이스 상태 업데이트
       const advanceCount = playResult.baseballResult === 'single' ? 1 
         : playResult.baseballResult === 'double' ? 2
-        : playResult.baseballResult === 'triple' ? 3
-        : 4;
-      
-      // 진루 처리
+        : playResult.baseballResult === 'triple' ? 3 : 4;
       const advanceResult = advanceRunners(state.bases, state.selectedPlayer, advanceCount);
       newBases = advanceResult.newBases;
     }
@@ -173,38 +182,41 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
 
   nextTurn: () => {
     const state = get();
+    if (state.phase === 'inningEnd') return;
     
-    if (state.phase === 'inningEnd') {
-      return; // 이닝 종료 상태에서는 새 이닝 시작 필요
+    // 선수 카드: 이닝 첫 타석이 아니면 1장만 드로우
+    let newPlayerHand: PlayerCard[];
+    let newPlayerDeck: PlayerCard[];
+    
+    if (state.playerDeck.length === 0) {
+      // 덱이 비었으면 재구성 (셔플 안함, 예측 가능)
+      const recycledDeck = [...starterPlayers];
+      const { drawn, remaining } = drawPlayers(recycledDeck, 1);
+      newPlayerHand = drawn;
+      newPlayerDeck = remaining;
+    } else {
+      // 1장만 드로우
+      const { drawn, remaining } = drawPlayers(state.playerDeck, 1);
+      newPlayerHand = drawn;
+      newPlayerDeck = remaining;
     }
     
-    // 새로운 선수 3장 드로우
-    const { drawn, remaining } = drawPlayers(state.playerDeck, 3);
-    
-    if (drawn.length === 0) {
-      // 선수덱이 비었으면 셔플하지 않고 처음부터 다시 (예측 가능)
-      const recycledDeck = shuffle([...starterPlayers]);
-      const { drawn: newDrawn, remaining: newRemaining } = drawPlayers(recycledDeck, 3);
-      
-      set({
-        playerHand: newDrawn,
-        playerDeck: newRemaining,
-        selectedPlayer: null,
-        pokerHand: [],
-        selectedPokerCards: [],
-        currentResult: null,
-        phase: 'selectPlayer',
-      });
-      return;
+    // 트럼프 카드: 사용한 핸드 버리고 8장 채우기
+    let newPokerDeck = state.pokerDeck;
+    if (newPokerDeck.length < HAND_SIZE) {
+      newPokerDeck = shuffle(createPokerDeck());
     }
+    const { drawn: pokerHand, remaining: pokerDeck } = drawPokerCards(newPokerDeck, HAND_SIZE);
     
     set({
-      playerHand: drawn,
-      playerDeck: remaining,
+      playerHand: newPlayerHand,
+      playerDeck: newPlayerDeck,
       selectedPlayer: null,
-      pokerHand: [],
+      pokerHand,
+      pokerDeck,
       selectedPokerCards: [],
       currentResult: null,
+      isFirstAtBat: false,
       phase: 'selectPlayer',
     });
   },
@@ -212,13 +224,12 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
   startNewInning: () => {
     const state = get();
     
-    // 9이닝 종료 체크
     if (state.currentInning >= state.maxInnings) {
       set({ phase: 'gameEnd' });
       return;
     }
     
-    // 루상 주자들을 덱 하단으로 되돌림
+    // 루상 주자들을 덱 하단으로
     let newPlayerDeck = state.playerDeck;
     if (state.bases.third) newPlayerDeck = addToBottom(newPlayerDeck, state.bases.third);
     if (state.bases.second) newPlayerDeck = addToBottom(newPlayerDeck, state.bases.second);
@@ -226,59 +237,29 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     
     // 트럼프덱 재셔플
     const reshuffledPoker = shuffle(createPokerDeck());
+    const { drawn: pokerHand, remaining: pokerDeck } = drawPokerCards(reshuffledPoker, HAND_SIZE);
     
-    // 새 손패 드로우
-    const { drawn, remaining } = drawPlayers(newPlayerDeck, 3);
+    // 새 이닝 첫 타석: 3장 드로우
+    const { drawn: playerHand, remaining: playerDeckAfter } = drawPlayers(newPlayerDeck, 3);
     
-    // 다음 이닝 목표 포인트 증가
     const newTargetPoints = BASE_TARGET_POINTS + (state.currentInning * 50);
     
     set({
       currentInning: state.currentInning + 1,
       outs: 0,
       bases: emptyBases(),
-      playerDeck: remaining,
-      playerHand: drawn,
+      playerDeck: playerDeckAfter,
+      playerHand,
       selectedPlayer: null,
-      pokerDeck: reshuffledPoker,
-      pokerHand: [],
+      isFirstAtBat: true,
+      pokerDeck,
+      pokerHand,
       selectedPokerCards: [],
       currentResult: null,
       phase: 'selectPlayer',
       targetPoints: newTargetPoints,
       inningPoints: 0,
-      redrawsRemaining: INITIAL_REDRAWS,
-    });
-  },
-
-  redrawCards: () => {
-    const state = get();
-    if (state.redrawsRemaining <= 0) return;
-    if (state.phase !== 'selectCards') return;
-    
-    // 덱에 카드가 충분한지 확인
-    if (state.pokerDeck.length < 5) {
-      // 덱 재셔플
-      const reshuffledPoker = shuffle(createPokerDeck());
-      const { drawn, remaining } = drawPokerCards(reshuffledPoker, 5);
-      
-      set({
-        pokerDeck: remaining,
-        pokerHand: drawn,
-        selectedPokerCards: [],
-        redrawsRemaining: state.redrawsRemaining - 1,
-      });
-      return;
-    }
-    
-    // 새 카드 5장 드로우
-    const { drawn, remaining } = drawPokerCards(state.pokerDeck, 5);
-    
-    set({
-      pokerDeck: remaining,
-      pokerHand: drawn,
-      selectedPokerCards: [],
-      redrawsRemaining: state.redrawsRemaining - 1,
+      discardsRemaining: INITIAL_DISCARDS,
     });
   },
 

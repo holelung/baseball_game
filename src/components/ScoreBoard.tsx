@@ -6,7 +6,7 @@ interface ScoreBoardProps {
   inningPoints: number; // 이번 이닝 포인트
   targetPoints: number; // 목표 포인트
   outs: number;
-  redrawsRemaining: number;
+  discardsRemaining: number;
 }
 
 export function ScoreBoard({ 
@@ -17,7 +17,7 @@ export function ScoreBoard({
   inningPoints,
   targetPoints,
   outs, 
-  redrawsRemaining 
+  discardsRemaining 
 }: ScoreBoardProps) {
   const isTargetMet = inningPoints >= targetPoints;
   
@@ -65,12 +65,12 @@ export function ScoreBoard({
         </div>
       </div>
       
-      {/* 리드로우 횟수 */}
+      {/* 버리기 횟수 */}
       <div className="mt-3 pt-3 border-t border-gray-700 flex justify-between items-center">
         <div>
-          <span className="text-gray-400 text-sm">카드 다시뽑기: </span>
-          <span className="text-blue-400 font-bold">{redrawsRemaining}회</span>
-          <span className="text-gray-500 text-sm"> 남음</span>
+          <span className="text-gray-400 text-sm">버리기: </span>
+          <span className="text-blue-400 font-bold">{discardsRemaining}회</span>
+          <span className="text-gray-500 text-sm"> 남음 (최대 5장)</span>
         </div>
         {isTargetMet && (
           <div className="text-green-400 text-sm font-semibold animate-pulse">

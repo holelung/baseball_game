@@ -2,17 +2,18 @@ import { PokerCard, HandRank, HandResult } from './types';
 
 /**
  * 족보 정보
+ * hitBonus: 안타 확률에 더해지는 보너스 (선수 타율 + hitBonus = 최종 확률)
  */
-export const HAND_INFO: Record<HandRank, { name: string; multiplier: number; minCards: number }> = {
-  'high_card':       { name: '하이 카드', multiplier: 1, minCards: 1 },
-  'one_pair':        { name: '원 페어', multiplier: 2, minCards: 2 },
-  'two_pair':        { name: '투 페어', multiplier: 3, minCards: 4 },
-  'three_of_kind':   { name: '트리플', multiplier: 4, minCards: 3 },
-  'straight':        { name: '스트레이트', multiplier: 5, minCards: 5 },
-  'flush':           { name: '플러시', multiplier: 6, minCards: 5 },
-  'full_house':      { name: '풀 하우스', multiplier: 7, minCards: 5 },
-  'four_of_kind':    { name: '포카드', multiplier: 8, minCards: 4 },
-  'straight_flush':  { name: '스트레이트 플러시', multiplier: 10, minCards: 5 },
+export const HAND_INFO: Record<HandRank, { name: string; multiplier: number; minCards: number; hitBonus: number }> = {
+  'high_card':       { name: '하이 카드', multiplier: 1, minCards: 1, hitBonus: -0.5 },      // 타율 - 0.5 (거의 아웃)
+  'one_pair':        { name: '원 페어', multiplier: 2, minCards: 2, hitBonus: 0.2 },        // 타율 + 0.2
+  'two_pair':        { name: '투 페어', multiplier: 3, minCards: 4, hitBonus: 0.4 },        // 타율 + 0.4
+  'three_of_kind':   { name: '트리플', multiplier: 4, minCards: 3, hitBonus: 0.5 },         // 타율 + 0.5
+  'straight':        { name: '스트레이트', multiplier: 5, minCards: 5, hitBonus: 0.6 },     // 타율 + 0.6
+  'flush':           { name: '플러시', multiplier: 6, minCards: 5, hitBonus: 0.7 },         // 타율 + 0.7
+  'full_house':      { name: '풀 하우스', multiplier: 7, minCards: 5, hitBonus: 0.8 },      // 타율 + 0.8 (거의 확정)
+  'four_of_kind':    { name: '포카드', multiplier: 8, minCards: 4, hitBonus: 1.0 },         // 확정 안타
+  'straight_flush':  { name: '스트레이트 플러시', multiplier: 10, minCards: 5, hitBonus: 1.5 }, // 확정 + 보너스
 };
 
 /**
@@ -125,6 +126,7 @@ export function evaluateHand(cards: PokerCard[]): HandResult {
       name: HAND_INFO['high_card'].name,
       cards: [],
       multiplier: HAND_INFO['high_card'].multiplier,
+      hitBonus: HAND_INFO['high_card'].hitBonus,
     };
   }
 
@@ -149,6 +151,7 @@ export function evaluateHand(cards: PokerCard[]): HandResult {
       name: HAND_INFO['straight_flush'].name,
       cards: straightFlush,
       multiplier: HAND_INFO['straight_flush'].multiplier,
+      hitBonus: HAND_INFO['straight_flush'].hitBonus,
     };
   }
   
@@ -159,6 +162,7 @@ export function evaluateHand(cards: PokerCard[]): HandResult {
       name: HAND_INFO['four_of_kind'].name,
       cards: quads[0],
       multiplier: HAND_INFO['four_of_kind'].multiplier,
+      hitBonus: HAND_INFO['four_of_kind'].hitBonus,
     };
   }
   
@@ -169,6 +173,7 @@ export function evaluateHand(cards: PokerCard[]): HandResult {
       name: HAND_INFO['full_house'].name,
       cards: [...triples[0], ...pairs[0]],
       multiplier: HAND_INFO['full_house'].multiplier,
+      hitBonus: HAND_INFO['full_house'].hitBonus,
     };
   }
   
@@ -179,6 +184,7 @@ export function evaluateHand(cards: PokerCard[]): HandResult {
       name: HAND_INFO['full_house'].name,
       cards: [...triples[0], ...triples[1].slice(0, 2)],
       multiplier: HAND_INFO['full_house'].multiplier,
+      hitBonus: HAND_INFO['full_house'].hitBonus,
     };
   }
   
@@ -190,6 +196,7 @@ export function evaluateHand(cards: PokerCard[]): HandResult {
       name: HAND_INFO['flush'].name,
       cards: flush,
       multiplier: HAND_INFO['flush'].multiplier,
+      hitBonus: HAND_INFO['flush'].hitBonus,
     };
   }
   
@@ -201,6 +208,7 @@ export function evaluateHand(cards: PokerCard[]): HandResult {
       name: HAND_INFO['straight'].name,
       cards: straight,
       multiplier: HAND_INFO['straight'].multiplier,
+      hitBonus: HAND_INFO['straight'].hitBonus,
     };
   }
   
@@ -211,6 +219,7 @@ export function evaluateHand(cards: PokerCard[]): HandResult {
       name: HAND_INFO['three_of_kind'].name,
       cards: triples[0],
       multiplier: HAND_INFO['three_of_kind'].multiplier,
+      hitBonus: HAND_INFO['three_of_kind'].hitBonus,
     };
   }
   
@@ -221,6 +230,7 @@ export function evaluateHand(cards: PokerCard[]): HandResult {
       name: HAND_INFO['two_pair'].name,
       cards: [...pairs[0], ...pairs[1]],
       multiplier: HAND_INFO['two_pair'].multiplier,
+      hitBonus: HAND_INFO['two_pair'].hitBonus,
     };
   }
   
@@ -231,12 +241,12 @@ export function evaluateHand(cards: PokerCard[]): HandResult {
       name: HAND_INFO['one_pair'].name,
       cards: pairs[0],
       multiplier: HAND_INFO['one_pair'].multiplier,
+      hitBonus: HAND_INFO['one_pair'].hitBonus,
     };
   }
   
   // 하이카드
   const sortedCards = [...cards].sort((a, b) => {
-    // A는 가장 높은 카드로 취급
     const aRank = a.rank === 1 ? 14 : a.rank;
     const bRank = b.rank === 1 ? 14 : b.rank;
     return bRank - aRank;
@@ -247,6 +257,7 @@ export function evaluateHand(cards: PokerCard[]): HandResult {
     name: HAND_INFO['high_card'].name,
     cards: [sortedCards[0]],
     multiplier: HAND_INFO['high_card'].multiplier,
+    hitBonus: HAND_INFO['high_card'].hitBonus,
   };
 }
 
@@ -257,7 +268,6 @@ export function getAvailableHands(cards: PokerCard[]): HandResult[] {
   const results: HandResult[] = [];
   const rankMap = countRanks(cards);
   
-  // 각 족보 체크 후 가능한 것들 추가
   const straightFlush = checkStraightFlush(cards);
   if (straightFlush) {
     results.push({
@@ -265,10 +275,10 @@ export function getAvailableHands(cards: PokerCard[]): HandResult[] {
       name: HAND_INFO['straight_flush'].name,
       cards: straightFlush,
       multiplier: HAND_INFO['straight_flush'].multiplier,
+      hitBonus: HAND_INFO['straight_flush'].hitBonus,
     });
   }
   
-  // 포카드
   for (const [, rankCards] of rankMap) {
     if (rankCards.length >= 4) {
       results.push({
@@ -276,11 +286,11 @@ export function getAvailableHands(cards: PokerCard[]): HandResult[] {
         name: HAND_INFO['four_of_kind'].name,
         cards: rankCards.slice(0, 4),
         multiplier: HAND_INFO['four_of_kind'].multiplier,
+        hitBonus: HAND_INFO['four_of_kind'].hitBonus,
       });
     }
   }
   
-  // 풀하우스
   const triples = [...rankMap.values()].filter(c => c.length >= 3);
   const pairs = [...rankMap.values()].filter(c => c.length >= 2);
   if (triples.length > 0 && pairs.length > 1) {
@@ -291,11 +301,11 @@ export function getAvailableHands(cards: PokerCard[]): HandResult[] {
         name: HAND_INFO['full_house'].name,
         cards: [...triples[0].slice(0, 3), ...otherPair.slice(0, 2)],
         multiplier: HAND_INFO['full_house'].multiplier,
+        hitBonus: HAND_INFO['full_house'].hitBonus,
       });
     }
   }
   
-  // 플러시
   const flush = checkFlush(cards);
   if (flush && !straightFlush) {
     results.push({
@@ -303,10 +313,10 @@ export function getAvailableHands(cards: PokerCard[]): HandResult[] {
       name: HAND_INFO['flush'].name,
       cards: flush,
       multiplier: HAND_INFO['flush'].multiplier,
+      hitBonus: HAND_INFO['flush'].hitBonus,
     });
   }
   
-  // 스트레이트
   const straight = checkStraight(cards);
   if (straight && !straightFlush) {
     results.push({
@@ -314,10 +324,10 @@ export function getAvailableHands(cards: PokerCard[]): HandResult[] {
       name: HAND_INFO['straight'].name,
       cards: straight,
       multiplier: HAND_INFO['straight'].multiplier,
+      hitBonus: HAND_INFO['straight'].hitBonus,
     });
   }
   
-  // 트리플
   for (const [, rankCards] of rankMap) {
     if (rankCards.length >= 3 && rankCards.length < 4) {
       results.push({
@@ -325,11 +335,11 @@ export function getAvailableHands(cards: PokerCard[]): HandResult[] {
         name: HAND_INFO['three_of_kind'].name,
         cards: rankCards.slice(0, 3),
         multiplier: HAND_INFO['three_of_kind'].multiplier,
+        hitBonus: HAND_INFO['three_of_kind'].hitBonus,
       });
     }
   }
   
-  // 투페어
   const pairGroups = [...rankMap.values()].filter(c => c.length >= 2);
   if (pairGroups.length >= 2) {
     results.push({
@@ -337,10 +347,10 @@ export function getAvailableHands(cards: PokerCard[]): HandResult[] {
       name: HAND_INFO['two_pair'].name,
       cards: [...pairGroups[0].slice(0, 2), ...pairGroups[1].slice(0, 2)],
       multiplier: HAND_INFO['two_pair'].multiplier,
+      hitBonus: HAND_INFO['two_pair'].hitBonus,
     });
   }
   
-  // 원페어
   for (const [, rankCards] of rankMap) {
     if (rankCards.length >= 2) {
       results.push({
@@ -348,12 +358,12 @@ export function getAvailableHands(cards: PokerCard[]): HandResult[] {
         name: HAND_INFO['one_pair'].name,
         cards: rankCards.slice(0, 2),
         multiplier: HAND_INFO['one_pair'].multiplier,
+        hitBonus: HAND_INFO['one_pair'].hitBonus,
       });
-      break; // 첫 번째 페어만
+      break;
     }
   }
   
-  // 하이카드는 항상 가능
   if (cards.length > 0) {
     const sortedCards = [...cards].sort((a, b) => {
       const aRank = a.rank === 1 ? 14 : a.rank;
@@ -365,6 +375,7 @@ export function getAvailableHands(cards: PokerCard[]): HandResult[] {
       name: HAND_INFO['high_card'].name,
       cards: [sortedCards[0]],
       multiplier: HAND_INFO['high_card'].multiplier,
+      hitBonus: HAND_INFO['high_card'].hitBonus,
     });
   }
   

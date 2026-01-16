@@ -145,7 +145,9 @@ function getResultName(result: BaseballResult): string {
 }
 
 /**
- * 족보로 플레이 실행
+ * 확률 기반 플레이 실행
+ * 안타 확률 = 선수 타율 + 족보 hitBonus
+ * 확률 >= 1.0 이면 확정 안타
  */
 export function executePlay(
   handResult: HandResult,
@@ -153,7 +155,22 @@ export function executePlay(
   bases: BaseState
 ): PlayResult {
   const mapping = HAND_TO_BASEBALL[handResult.rank];
-  const baseballResult = mapping.result;
+  
+  // 확률 계산: 선수 타율 + 족보 보너스
+  const hitProbability = batter.battingAverage + handResult.hitBonus;
+  
+  // 확률 판정 (1.0 이상이면 확정)
+  const roll = Math.random();
+  const isHit = hitProbability >= 1.0 || roll < hitProbability;
+  const wasLucky = hitProbability < 1.0 && isHit;
+  
+  // 안타 실패 시 아웃
+  let baseballResult: BaseballResult;
+  if (!isHit) {
+    baseballResult = 'out';
+  } else {
+    baseballResult = mapping.result === 'out' ? 'single' : mapping.result; // 하이카드로 안타 시 1루타
+  }
   
   let runsScored = 0;
   let newBases = bases;
@@ -166,20 +183,25 @@ export function executePlay(
     newBases = advanceResult.newBases;
   }
   
-  // Point 계산: 기본 점수 × 배율 + 득점 보너스
-  const basePoints = mapping.baseScore;
+  // Point 계산
+  const basePoints = isOut ? 0 : mapping.baseScore;
   const multiplier = handResult.multiplier;
-  const runBonus = runsScored * 20; // 득점당 20점 보너스
-  const pointsEarned = (basePoints * multiplier) + runBonus;
+  const runBonus = runsScored * 20;
+  // 확률 1.0 초과 시 추가 보너스
+  const overflowBonus = hitProbability > 1.0 ? Math.floor((hitProbability - 1.0) * 50) : 0;
+  const pointsEarned = (basePoints * multiplier) + runBonus + overflowBonus;
   
   // 설명 생성
+  const probPercent = Math.min(Math.round(hitProbability * 100), 100);
   let description = '';
+  
   if (isOut) {
-    description = `${batter.name} - ${handResult.name}으로 아웃...`;
+    description = `${batter.name} - ${handResult.name} (${probPercent}%) 아웃...`;
   } else if (baseballResult === 'homerun') {
-    description = `🎉 ${batter.name}의 ${handResult.name}! ${getResultName(baseballResult)}! ${runsScored}점 득점! (+${pointsEarned}P)`;
+    description = `🎉 ${batter.name}의 ${handResult.name}! (${probPercent}%) ${getResultName(baseballResult)}! ${runsScored}점 득점! (+${pointsEarned}P)`;
   } else {
-    description = `${batter.name}의 ${handResult.name}! ${getResultName(baseballResult)}!${runsScored > 0 ? ` ${runsScored}점 득점!` : ''} (+${pointsEarned}P)`;
+    const luckyText = wasLucky ? ' (Lucky!)' : '';
+    description = `${batter.name}의 ${handResult.name}! (${probPercent}%)${luckyText} ${getResultName(baseballResult)}!${runsScored > 0 ? ` ${runsScored}점 득점!` : ''} (+${pointsEarned}P)`;
   }
   
   return {
@@ -188,6 +210,8 @@ export function executePlay(
     runsScored,
     pointsEarned: isOut ? 0 : pointsEarned,
     description,
+    hitProbability,
+    wasLucky,
   };
 }
 

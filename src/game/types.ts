@@ -46,6 +46,7 @@ export interface HandResult {
   name: string;
   cards: PokerCard[];     // 족보를 구성하는 카드들
   multiplier: number;     // 점수 배율
+  hitBonus: number;       // 안타 확률 보너스 (0.0 ~ 1.0+)
 }
 
 // 야구 결과 타입
@@ -63,6 +64,9 @@ export interface PlayResult {
   runsScored: number;
   pointsEarned: number;   // 최종 획득 포인트
   description: string;
+  // 확률 시스템
+  hitProbability: number; // 최종 안타 확률
+  wasLucky: boolean;      // 확률 판정 성공 여부
 }
 
 // 루 상태 (null이면 주자 없음)
@@ -94,13 +98,14 @@ export interface GameState {
   
   // 선수 카드 덱 상태
   playerDeck: PlayerCard[];      // 선수덱 (남은 카드)
-  playerHand: PlayerCard[];      // 선수 손패 (3장)
+  playerHand: PlayerCard[];      // 선수 손패 (최초 3장, 이후 1장씩)
   selectedPlayer: PlayerCard | null; // 선택된 선수
+  isFirstAtBat: boolean;         // 이닝 첫 타석 여부
   
   // 트럼프 카드 덱 상태
   pokerDeck: PokerCard[];        // 트럼프덱 (남은 카드)
-  pokerHand: PokerCard[];        // 트럼프 손패 (5장)
-  selectedPokerCards: PokerCard[]; // 선택한 트럼프 카드
+  pokerHand: PokerCard[];        // 트럼프 손패 (8장)
+  selectedPokerCards: PokerCard[]; // 선택한(버릴) 트럼프 카드
   
   // 현재 결과
   currentResult: PlayResult | null;
@@ -112,8 +117,8 @@ export interface GameState {
   targetPoints: number;
   inningPoints: number;       // 현재 이닝에서 획득한 포인트
   
-  // 리드로우 횟수 (트럼프 카드 다시 뽑기)
-  redrawsRemaining: number;
+  // 버리기 횟수 (이닝당)
+  discardsRemaining: number;
 }
 
 // 액션 결과 (기존 호환용)
