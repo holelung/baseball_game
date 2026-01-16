@@ -170,6 +170,12 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         : playResult.baseballResult === 'triple' ? 3 : 4;
       const advanceResult = advanceRunners(state.bases, state.selectedPlayer, advanceCount);
       newBases = advanceResult.newBases;
+      
+      // 득점한 주자들을 덱 뒤로 보냄 (revealed: true)
+      advanceResult.scoredRunners.forEach(runner => {
+        const revealedRunner = { ...runner, revealed: true };
+        updatedPlayerDeck = addToBottom(updatedPlayerDeck, revealedRunner);
+      });
     }
     
     // 사용한 카드 제거, 남은 카드 유지

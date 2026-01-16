@@ -16,14 +16,15 @@ export function emptyBases(): BaseState {
  * @param bases 현재 베이스 상태
  * @param batter 타자
  * @param advanceCount 진루 수 (1=안타, 2=2루타, 3=3루타, 4=홈런)
- * @returns 득점 수와 새로운 베이스 상태
+ * @returns 득점 수, 새로운 베이스 상태, 득점한 주자들
  */
 export function advanceRunners(
   bases: BaseState,
   batter: PlayerCard,
   advanceCount: number
-): { runsScored: number; newBases: BaseState } {
+): { runsScored: number; newBases: BaseState; scoredRunners: PlayerCard[] } {
   let runsScored = 0;
+  const scoredRunners: PlayerCard[] = [];
   const runners: (PlayerCard | null)[] = [
     batter,           // 타자 (0번 = 홈)
     bases.first,      // 1루 주자
@@ -47,6 +48,7 @@ export function advanceRunners(
     if (newBase >= 4) {
       // 홈 도착 = 득점
       runsScored++;
+      scoredRunners.push(runner);
     } else if (newBase === 1) {
       newBases.first = runner;
     } else if (newBase === 2) {
@@ -56,7 +58,7 @@ export function advanceRunners(
     }
   });
 
-  return { runsScored, newBases };
+  return { runsScored, newBases, scoredRunners };
 }
 
 /**
