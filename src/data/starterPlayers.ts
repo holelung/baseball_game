@@ -1,13 +1,13 @@
 import { PlayerCard } from '../game/types';
 
 /**
- * 스타터 선수덱 (9장)
+ * 스타터 선수덱 (10장)
  * 기본적으로 평범한 능력치의 선수들
  */
 export const starterPlayers: PlayerCard[] = [
   {
     id: 'p1',
-    name: '1번 리드오프',
+    name: '김민수',
     tags: ['speed'],
     battingAverage: 0.280,
     power: 3,
@@ -15,7 +15,7 @@ export const starterPlayers: PlayerCard[] = [
   },
   {
     id: 'p2',
-    name: '2번 컨택트',
+    name: '이준혁',
     tags: ['contact'],
     battingAverage: 0.290,
     power: 4,
@@ -23,7 +23,7 @@ export const starterPlayers: PlayerCard[] = [
   },
   {
     id: 'p3',
-    name: '3번 타자',
+    name: '박성우',
     tags: ['contact', 'power'],
     battingAverage: 0.300,
     power: 6,
@@ -31,7 +31,7 @@ export const starterPlayers: PlayerCard[] = [
   },
   {
     id: 'p4',
-    name: '4번 클린업',
+    name: '최강타',
     tags: ['power'],
     battingAverage: 0.270,
     power: 9,
@@ -39,7 +39,7 @@ export const starterPlayers: PlayerCard[] = [
   },
   {
     id: 'p5',
-    name: '5번 타자',
+    name: '정대현',
     tags: ['power'],
     battingAverage: 0.260,
     power: 7,
@@ -47,7 +47,7 @@ export const starterPlayers: PlayerCard[] = [
   },
   {
     id: 'p6',
-    name: '6번 타자',
+    name: '강지훈',
     tags: ['contact'],
     battingAverage: 0.265,
     power: 5,
@@ -55,15 +55,15 @@ export const starterPlayers: PlayerCard[] = [
   },
   {
     id: 'p7',
-    name: '7번 타자',
-    tags: [],
+    name: '윤서진',
+    tags: ['eye'],
     battingAverage: 0.250,
     power: 4,
     speed: 5,
   },
   {
     id: 'p8',
-    name: '8번 타자',
+    name: '임태양',
     tags: [],
     battingAverage: 0.240,
     power: 3,
@@ -71,10 +71,18 @@ export const starterPlayers: PlayerCard[] = [
   },
   {
     id: 'p9',
-    name: '9번 타자',
+    name: '송민기',
     tags: ['speed'],
     battingAverage: 0.230,
     power: 2,
+    speed: 7,
+  },
+  {
+    id: 'p10',
+    name: '한승우',
+    tags: ['contact', 'speed'],
+    battingAverage: 0.275,
+    power: 3,
     speed: 7,
   },
 ];

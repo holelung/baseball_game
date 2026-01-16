@@ -1,36 +1,60 @@
 interface ScoreBoardProps {
   inning: number;
-  score: number;
+  maxInnings: number;
+  score: number;        // 야구 득점
+  totalPoints: number;  // 총 포인트
+  inningPoints: number; // 이번 이닝 포인트
+  targetPoints: number; // 목표 포인트
   outs: number;
-  targetScore: number;
-  dropsRemaining: number;
+  redrawsRemaining: number;
 }
 
-export function ScoreBoard({ inning, score, outs, targetScore, dropsRemaining }: ScoreBoardProps) {
+export function ScoreBoard({ 
+  inning, 
+  maxInnings,
+  score, 
+  totalPoints,
+  inningPoints,
+  targetPoints,
+  outs, 
+  redrawsRemaining 
+}: ScoreBoardProps) {
+  const isTargetMet = inningPoints >= targetPoints;
+  
   return (
     <div className="bg-gray-900 rounded-xl p-4 text-white shadow-lg">
-      <div className="grid grid-cols-3 gap-4 text-center">
+      <div className="grid grid-cols-4 gap-2 sm:gap-4 text-center">
         {/* 이닝 */}
         <div>
-          <div className="text-gray-400 text-sm">이닝</div>
-          <div className="text-3xl font-bold text-yellow-400">{inning}</div>
+          <div className="text-gray-400 text-xs sm:text-sm">이닝</div>
+          <div className="text-xl sm:text-3xl font-bold text-yellow-400">
+            {inning}<span className="text-sm text-gray-500">/{maxInnings}</span>
+          </div>
         </div>
         
-        {/* 점수 */}
+        {/* 득점 */}
         <div>
-          <div className="text-gray-400 text-sm">점수</div>
-          <div className="text-3xl font-bold text-green-400">{score}</div>
-          <div className="text-xs text-gray-500">목표: {targetScore}</div>
+          <div className="text-gray-400 text-xs sm:text-sm">득점</div>
+          <div className="text-xl sm:text-3xl font-bold text-blue-400">{score}</div>
+        </div>
+        
+        {/* 포인트 */}
+        <div>
+          <div className="text-gray-400 text-xs sm:text-sm">포인트</div>
+          <div className="text-xl sm:text-3xl font-bold text-green-400">{totalPoints}P</div>
+          <div className={`text-xs ${isTargetMet ? 'text-green-400' : 'text-gray-500'}`}>
+            이번 이닝: {inningPoints}/{targetPoints}
+          </div>
         </div>
         
         {/* 아웃카운트 */}
         <div>
-          <div className="text-gray-400 text-sm">아웃</div>
+          <div className="text-gray-400 text-xs sm:text-sm">아웃</div>
           <div className="flex justify-center gap-1 mt-1">
             {[0, 1, 2].map(i => (
               <div
                 key={i}
-                className={`w-6 h-6 rounded-full border-2 ${
+                className={`w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 ${
                   i < outs 
                     ? 'bg-red-500 border-red-400' 
                     : 'bg-transparent border-gray-600'
@@ -41,11 +65,18 @@ export function ScoreBoard({ inning, score, outs, targetScore, dropsRemaining }:
         </div>
       </div>
       
-      {/* 드롭 횟수 */}
-      <div className="mt-3 pt-3 border-t border-gray-700 text-center">
-        <span className="text-gray-400 text-sm">카드 드롭: </span>
-        <span className="text-blue-400 font-bold">{dropsRemaining}회</span>
-        <span className="text-gray-500 text-sm"> 남음</span>
+      {/* 리드로우 횟수 */}
+      <div className="mt-3 pt-3 border-t border-gray-700 flex justify-between items-center">
+        <div>
+          <span className="text-gray-400 text-sm">카드 다시뽑기: </span>
+          <span className="text-blue-400 font-bold">{redrawsRemaining}회</span>
+          <span className="text-gray-500 text-sm"> 남음</span>
+        </div>
+        {isTargetMet && (
+          <div className="text-green-400 text-sm font-semibold animate-pulse">
+            목표 달성!
+          </div>
+        )}
       </div>
     </div>
   );

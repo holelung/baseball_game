@@ -1,9 +1,9 @@
 import { create } from 'zustand';
-import { GameState, GamePhase, PlayerCard, ActionCard, BaseState } from '../game/types';
-import { shuffle, drawPlayers, drawAction, addToBottom, returnToDeck } from '../game/deck';
-import { resolveAction, emptyBases } from '../game/scoring';
+import { GameState, GamePhase, PlayerCard, PokerCard, PlayResult, BaseState } from '../game/types';
+import { shuffle, drawPlayers, addToBottom, returnToDeck, createPokerDeck, drawPokerCards, toggleCardSelection, getSelectedCards } from '../game/deck';
+import { emptyBases, executePlay, advanceRunners } from '../game/scoring';
+import { evaluateHand } from '../game/poker';
 import { starterPlayers } from '../data/starterPlayers';
-import { starterActions } from '../data/starterActions';
 
 interface GameActions {
   // 게임 초기화
@@ -12,35 +12,47 @@ interface GameActions {
   // 선수 선택
   selectPlayer: (playerId: string) => void;
   
-  // 다음 턴 (액션 카드 처리 후)
+  // 트럼프 카드 선택 토글
+  togglePokerCard: (cardId: string) => void;
+  
+  // 선택한 카드로 플레이 실행
+  executeSelectedPlay: () => void;
+  
+  // 다음 턴으로 진행
   nextTurn: () => void;
   
   // 새 이닝 시작
   startNewInning: () => void;
   
-  // 액션 카드 드롭 (버리기)
-  dropAction: () => void;
+  // 카드 다시 뽑기
+  redrawCards: () => void;
   
   // 게임 리셋
   resetGame: () => void;
 }
 
-const INITIAL_DROPS_PER_INNING = 2;
-const TARGET_SCORE = 3; // 이닝당 목표 점수
+const MAX_INNINGS = 9;
+const INITIAL_REDRAWS = 2;
+const BASE_TARGET_POINTS = 100; // 기본 목표 포인트
 
 const initialState: GameState = {
   currentInning: 1,
+  maxInnings: MAX_INNINGS,
   outs: 0,
   score: 0,
+  totalPoints: 0,
   bases: emptyBases(),
   playerDeck: [],
   playerHand: [],
-  playerDiscard: [],
-  actionDeck: [],
-  currentAction: null,
+  selectedPlayer: null,
+  pokerDeck: [],
+  pokerHand: [],
+  selectedPokerCards: [],
+  currentResult: null,
   phase: 'selectPlayer',
-  targetScore: TARGET_SCORE,
-  dropsRemaining: INITIAL_DROPS_PER_INNING,
+  targetPoints: BASE_TARGET_POINTS,
+  inningPoints: 0,
+  redrawsRemaining: INITIAL_REDRAWS,
 };
 
 export const useGameStore = create<GameState & GameActions>((set, get) => ({
@@ -49,17 +61,18 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
   initGame: () => {
     // 선수덱 셔플 (최초 1회만, 이후 예측 가능)
     const shuffledPlayers = shuffle([...starterPlayers]);
-    // 액션덱 셔플
-    const shuffledActions = shuffle([...starterActions]);
+    
+    // 트럼프덱 생성 및 셔플
+    const shuffledPoker = shuffle(createPokerDeck());
     
     // 선수 3장 드로우
-    const { drawn, remaining } = drawPlayers(shuffledPlayers, 3);
+    const { drawn: playerHand, remaining: playerDeck } = drawPlayers(shuffledPlayers, 3);
     
     set({
       ...initialState,
-      playerDeck: remaining,
-      playerHand: drawn,
-      actionDeck: shuffledActions,
+      playerDeck,
+      playerHand,
+      pokerDeck: shuffledPoker,
       phase: 'selectPlayer',
     });
   },
@@ -76,45 +89,84 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     const notSelected = state.playerHand.filter(p => p.id !== playerId);
     const newPlayerDeck = returnToDeck(state.playerDeck, notSelected);
     
-    // 액션 카드 드로우
-    const { drawn: actionCard, remaining: actionRemaining } = drawAction(state.actionDeck);
+    // 트럼프 카드 5장 드로우
+    const { drawn: pokerHand, remaining: pokerDeck } = drawPokerCards(state.pokerDeck, 5);
     
-    if (!actionCard) {
-      // 액션덱이 비었으면 이닝 종료
-      set({
-        phase: 'inningEnd',
-        playerDeck: newPlayerDeck,
-        playerHand: [],
-      });
-      return;
-    }
+    set({
+      selectedPlayer,
+      playerDeck: newPlayerDeck,
+      playerHand: [],
+      pokerHand,
+      pokerDeck,
+      selectedPokerCards: [],
+      phase: 'selectCards',
+    });
+  },
+
+  togglePokerCard: (cardId: string) => {
+    const state = get();
+    if (state.phase !== 'selectCards') return;
     
-    // 액션 결과 계산
-    const result = resolveAction(actionCard, selectedPlayer, state.bases);
+    const newPokerHand = toggleCardSelection(state.pokerHand, cardId);
+    const selectedCards = getSelectedCards(newPokerHand);
     
-    // 아웃 처리
+    set({
+      pokerHand: newPokerHand,
+      selectedPokerCards: selectedCards,
+    });
+  },
+
+  executeSelectedPlay: () => {
+    const state = get();
+    if (state.phase !== 'selectCards') return;
+    if (!state.selectedPlayer) return;
+    
+    // 선택된 카드가 없으면 전체 핸드로 판정
+    const cardsToEvaluate = state.selectedPokerCards.length > 0 
+      ? state.selectedPokerCards 
+      : state.pokerHand;
+    
+    // 족보 판정
+    const handResult = evaluateHand(cardsToEvaluate);
+    
+    // 플레이 실행
+    const playResult = executePlay(handResult, state.selectedPlayer, state.bases);
+    
+    // 결과 처리
+    const isOut = playResult.baseballResult === 'out';
     let newOuts = state.outs;
-    let newPhase: GamePhase = 'showAction';
-    let updatedPlayerDeck = newPlayerDeck;
+    let newPhase: GamePhase = 'showResult';
+    let updatedPlayerDeck = state.playerDeck;
+    let newBases: BaseState = state.bases;
     
-    if (result.isOut) {
+    if (isOut) {
       newOuts += 1;
       // 아웃된 선수는 덱 하단으로
-      updatedPlayerDeck = addToBottom(newPlayerDeck, selectedPlayer);
+      updatedPlayerDeck = addToBottom(state.playerDeck, state.selectedPlayer);
       
       if (newOuts >= 3) {
         newPhase = 'inningEnd';
       }
+    } else {
+      // 안타 시 베이스 상태 업데이트
+      const advanceCount = playResult.baseballResult === 'single' ? 1 
+        : playResult.baseballResult === 'double' ? 2
+        : playResult.baseballResult === 'triple' ? 3
+        : 4;
+      
+      // 진루 처리
+      const advanceResult = advanceRunners(state.bases, state.selectedPlayer, advanceCount);
+      newBases = advanceResult.newBases;
     }
     
     set({
       playerDeck: updatedPlayerDeck,
-      playerHand: [],
-      actionDeck: actionRemaining,
-      currentAction: actionCard,
-      bases: result.newBases,
-      score: state.score + result.runsScored,
+      bases: newBases,
+      score: state.score + playResult.runsScored,
+      totalPoints: state.totalPoints + playResult.pointsEarned,
+      inningPoints: state.inningPoints + playResult.pointsEarned,
       outs: newOuts,
+      currentResult: playResult,
       phase: newPhase,
     });
   },
@@ -130,15 +182,29 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     const { drawn, remaining } = drawPlayers(state.playerDeck, 3);
     
     if (drawn.length === 0) {
-      // 선수덱이 비었으면 게임 종료 (또는 덱 재구성)
-      set({ phase: 'gameEnd' });
+      // 선수덱이 비었으면 셔플하지 않고 처음부터 다시 (예측 가능)
+      const recycledDeck = shuffle([...starterPlayers]);
+      const { drawn: newDrawn, remaining: newRemaining } = drawPlayers(recycledDeck, 3);
+      
+      set({
+        playerHand: newDrawn,
+        playerDeck: newRemaining,
+        selectedPlayer: null,
+        pokerHand: [],
+        selectedPokerCards: [],
+        currentResult: null,
+        phase: 'selectPlayer',
+      });
       return;
     }
     
     set({
       playerHand: drawn,
       playerDeck: remaining,
-      currentAction: null,
+      selectedPlayer: null,
+      pokerHand: [],
+      selectedPokerCards: [],
+      currentResult: null,
       phase: 'selectPlayer',
     });
   },
@@ -146,20 +212,26 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
   startNewInning: () => {
     const state = get();
     
-    // 루상 주자들을 덱으로 되돌림
-    const runnersToReturn: PlayerCard[] = [];
-    if (state.bases.first) runnersToReturn.push(state.bases.first);
-    if (state.bases.second) runnersToReturn.push(state.bases.second);
-    if (state.bases.third) runnersToReturn.push(state.bases.third);
+    // 9이닝 종료 체크
+    if (state.currentInning >= state.maxInnings) {
+      set({ phase: 'gameEnd' });
+      return;
+    }
     
-    // 액션덱 재셔플
-    const reshuffledActions = shuffle([...starterActions]);
+    // 루상 주자들을 덱 하단으로 되돌림
+    let newPlayerDeck = state.playerDeck;
+    if (state.bases.third) newPlayerDeck = addToBottom(newPlayerDeck, state.bases.third);
+    if (state.bases.second) newPlayerDeck = addToBottom(newPlayerDeck, state.bases.second);
+    if (state.bases.first) newPlayerDeck = addToBottom(newPlayerDeck, state.bases.first);
     
-    // 선수덱 재구성 (루상 주자 + 현재 덱)
-    const newPlayerDeck = [...runnersToReturn, ...state.playerDeck];
+    // 트럼프덱 재셔플
+    const reshuffledPoker = shuffle(createPokerDeck());
     
     // 새 손패 드로우
     const { drawn, remaining } = drawPlayers(newPlayerDeck, 3);
+    
+    // 다음 이닝 목표 포인트 증가
+    const newTargetPoints = BASE_TARGET_POINTS + (state.currentInning * 50);
     
     set({
       currentInning: state.currentInning + 1,
@@ -167,25 +239,46 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       bases: emptyBases(),
       playerDeck: remaining,
       playerHand: drawn,
-      actionDeck: reshuffledActions,
-      currentAction: null,
+      selectedPlayer: null,
+      pokerDeck: reshuffledPoker,
+      pokerHand: [],
+      selectedPokerCards: [],
+      currentResult: null,
       phase: 'selectPlayer',
-      dropsRemaining: INITIAL_DROPS_PER_INNING,
+      targetPoints: newTargetPoints,
+      inningPoints: 0,
+      redrawsRemaining: INITIAL_REDRAWS,
     });
   },
 
-  dropAction: () => {
+  redrawCards: () => {
     const state = get();
-    if (state.dropsRemaining <= 0) return;
-    if (state.phase !== 'selectPlayer') return;
+    if (state.redrawsRemaining <= 0) return;
+    if (state.phase !== 'selectCards') return;
     
-    // 현재 액션 카드 버리고 새로 뽑기
-    const { drawn: newAction, remaining } = drawAction(state.actionDeck);
+    // 덱에 카드가 충분한지 확인
+    if (state.pokerDeck.length < 5) {
+      // 덱 재셔플
+      const reshuffledPoker = shuffle(createPokerDeck());
+      const { drawn, remaining } = drawPokerCards(reshuffledPoker, 5);
+      
+      set({
+        pokerDeck: remaining,
+        pokerHand: drawn,
+        selectedPokerCards: [],
+        redrawsRemaining: state.redrawsRemaining - 1,
+      });
+      return;
+    }
+    
+    // 새 카드 5장 드로우
+    const { drawn, remaining } = drawPokerCards(state.pokerDeck, 5);
     
     set({
-      actionDeck: remaining,
-      currentAction: newAction,
-      dropsRemaining: state.dropsRemaining - 1,
+      pokerDeck: remaining,
+      pokerHand: drawn,
+      selectedPokerCards: [],
+      redrawsRemaining: state.redrawsRemaining - 1,
     });
   },
 
