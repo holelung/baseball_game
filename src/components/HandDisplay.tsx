@@ -1,9 +1,7 @@
 import { HandResult, HandRank, PlayerCard } from '../game/types';
-import { PokerCardComponent } from './PokerCard';
 
 interface HandDisplayProps {
   handResult: HandResult | null;
-  showCards?: boolean;
   batter?: PlayerCard | null;  // 확률 계산용
 }
 
@@ -33,7 +31,7 @@ const HAND_TO_RESULT: Record<HandRank, string> = {
   'straight_flush':  '홈런 ++',
 };
 
-export function HandDisplay({ handResult, showCards, batter }: HandDisplayProps) {
+export function HandDisplay({ handResult, batter }: HandDisplayProps) {
   if (!handResult) {
     return (
       <div className="bg-gray-700/50 rounded-lg p-4 text-center">
@@ -79,20 +77,6 @@ export function HandDisplay({ handResult, showCards, batter }: HandDisplayProps)
         )}
       </div>
       
-      {showCards && handResult.cards.length > 0 && (
-        <div className="mt-3 pt-3 border-t border-white/20">
-          <div className="text-xs text-white/60 mb-2">족보 구성 카드:</div>
-          <div className="flex gap-1 flex-wrap">
-            {handResult.cards.map(card => (
-              <PokerCardComponent 
-                key={card.id} 
-                card={{ ...card, selected: true }} 
-                disabled 
-              />
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

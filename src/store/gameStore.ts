@@ -73,14 +73,12 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     const selectedPlayer = state.playerHand.find(p => p.id === playerId);
     if (!selectedPlayer) return;
     
-    // 선택하지 않은 선수들은 덱 상단으로 되돌림
-    const notSelected = state.playerHand.filter(p => p.id !== playerId);
-    const newPlayerDeck = returnToDeck(state.playerDeck, notSelected);
+    // 선택하지 않은 선수들은 핸드에 유지
+    const remainingHand = state.playerHand.filter(p => p.id !== playerId);
     
     set({
       selectedPlayer,
-      playerDeck: newPlayerDeck,
-      playerHand: [],
+      playerHand: remainingHand,  // 남은 2장 유지
       selectedPokerCards: [],
       phase: 'selectCards',
     });
@@ -184,22 +182,21 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     const state = get();
     if (state.phase === 'inningEnd') return;
     
-    // 선수 카드: 이닝 첫 타석이 아니면 1장만 드로우
-    let newPlayerHand: PlayerCard[];
-    let newPlayerDeck: PlayerCard[];
+    // 선수 카드: 현재 핸드(2장)에 1장 추가해서 3장 유지
+    let newPlayerDeck = state.playerDeck;
+    let drawnPlayer: PlayerCard[] = [];
     
-    if (state.playerDeck.length === 0) {
-      // 덱이 비었으면 재구성 (셔플 안함, 예측 가능)
-      const recycledDeck = [...starterPlayers];
-      const { drawn, remaining } = drawPlayers(recycledDeck, 1);
-      newPlayerHand = drawn;
-      newPlayerDeck = remaining;
-    } else {
-      // 1장만 드로우
-      const { drawn, remaining } = drawPlayers(state.playerDeck, 1);
-      newPlayerHand = drawn;
-      newPlayerDeck = remaining;
+    if (newPlayerDeck.length === 0) {
+      // 덱이 비었으면 재구성
+      newPlayerDeck = shuffle([...starterPlayers]);
     }
+    
+    const { drawn, remaining } = drawPlayers(newPlayerDeck, 1);
+    drawnPlayer = drawn;
+    newPlayerDeck = remaining;
+    
+    // 기존 핸드(2장) + 새로 뽑은 1장 = 3장
+    const newPlayerHand = [...state.playerHand, ...drawnPlayer];
     
     // 트럼프 카드: 사용한 핸드 버리고 8장 채우기
     let newPokerDeck = state.pokerDeck;

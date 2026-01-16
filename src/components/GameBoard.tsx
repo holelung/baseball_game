@@ -87,17 +87,10 @@ export function GameBoard() {
       <div className="bg-gray-800/50 rounded-xl p-4 sm:p-6">
         {/* 선수 선택 단계 */}
         {phase === 'selectPlayer' && (
-          <div className="space-y-4">
-            <Hand
-              players={playerHand}
-              onSelectPlayer={selectPlayer}
-            />
-            {!isFirstAtBat && (
-              <div className="text-center text-gray-500 text-sm">
-                (다음 타석부터는 1장씩 드로우)
-              </div>
-            )}
-          </div>
+          <Hand
+            players={playerHand}
+            onSelectPlayer={selectPlayer}
+          />
         )}
 
         {/* 카드 선택 단계 */}
@@ -122,7 +115,6 @@ export function GameBoard() {
             <HandDisplay 
               handResult={currentHandResult} 
               batter={selectedPlayer}
-              showCards
             />
             
             {/* 족보 가이드 */}
@@ -171,7 +163,7 @@ export function GameBoard() {
               </div>
             )}
             
-            <HandDisplay handResult={currentResult.handResult} showCards />
+            <HandDisplay handResult={currentResult.handResult} />
             
             <button
               onClick={nextTurn}
