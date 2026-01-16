@@ -167,6 +167,10 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       newBases = advanceResult.newBases;
     }
     
+    // 사용한 카드 제거, 남은 카드 유지
+    const usedCardIds = new Set(state.selectedPokerCards.map(c => c.id));
+    const remainingPokerHand = state.pokerHand.filter(c => !usedCardIds.has(c.id));
+    
     set({
       playerDeck: updatedPlayerDeck,
       bases: newBases,
@@ -176,6 +180,8 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       outs: newOuts,
       currentResult: playResult,
       phase: newPhase,
+      pokerHand: remainingPokerHand,  // 남은 카드 유지
+      selectedPokerCards: [],
     });
   },
 
@@ -199,19 +205,28 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     // 기존 핸드(2장) + 새로 뽑은 1장 = 3장
     const newPlayerHand = [...state.playerHand, ...drawnPlayer];
     
-    // 트럼프 카드: 사용한 핸드 버리고 8장 채우기
+    // 트럼프 카드: 남은 카드 유지 + 부족한 만큼만 채우기
+    const currentPokerHand = state.pokerHand.map(c => ({ ...c, selected: false }));
+    const needToDraw = HAND_SIZE - currentPokerHand.length;
+    
     let newPokerDeck = state.pokerDeck;
-    if (newPokerDeck.length < HAND_SIZE) {
-      newPokerDeck = shuffle(createPokerDeck());
+    let newPokerHand = currentPokerHand;
+    
+    if (needToDraw > 0) {
+      if (newPokerDeck.length < needToDraw) {
+        newPokerDeck = shuffle(createPokerDeck());
+      }
+      const { drawn: drawnPoker, remaining: remainingDeck } = drawPokerCards(newPokerDeck, needToDraw);
+      newPokerHand = [...currentPokerHand, ...drawnPoker];
+      newPokerDeck = remainingDeck;
     }
-    const { drawn: pokerHand, remaining: pokerDeck } = drawPokerCards(newPokerDeck, HAND_SIZE);
     
     set({
       playerHand: newPlayerHand,
       playerDeck: newPlayerDeck,
       selectedPlayer: null,
-      pokerHand,
-      pokerDeck,
+      pokerHand: newPokerHand,
+      pokerDeck: newPokerDeck,
       selectedPokerCards: [],
       currentResult: null,
       isFirstAtBat: false,
