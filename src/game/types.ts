@@ -10,6 +10,8 @@ export interface PlayerCard {
   battingAverage: number; // 타율 (0-1)
   power: number;          // 장타력 (1-10)
   speed: number;          // 주루 속도 (1-10)
+  // 큐 순서 공개 여부 (한번 사용하면 순서를 알게 됨)
+  revealed: boolean;
 }
 
 // ========== 트럼프 카드 시스템 ==========

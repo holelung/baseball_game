@@ -47,11 +47,14 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
   ...initialState,
 
   initGame: () => {
-    const shuffledPlayers = shuffle([...starterPlayers]);
+    // 선수 카드 초기화: 모두 revealed: false (순서 모름)
+    const freshPlayers = starterPlayers.map(p => ({ ...p, revealed: false }));
+    const shuffledPlayers = shuffle(freshPlayers);
     const shuffledPoker = shuffle(createPokerDeck());
     
-    // 최초 3장 드로우
-    const { drawn: playerHand, remaining: playerDeck } = drawPlayers(shuffledPlayers, 3);
+    // 최초 3장 드로우 - 핸드에 온 카드는 revealed: true
+    const { drawn, remaining: playerDeck } = drawPlayers(shuffledPlayers, 3);
+    const playerHand = drawn.map(p => ({ ...p, revealed: true }));
     // 트럼프 8장 드로우
     const { drawn: pokerHand, remaining: pokerDeck } = drawPokerCards(shuffledPoker, HAND_SIZE);
     
@@ -154,7 +157,9 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     
     if (isOut) {
       newOuts += 1;
-      updatedPlayerDeck = addToBottom(state.playerDeck, state.selectedPlayer);
+      // 사용한 카드를 큐 뒤로 보낼 때 revealed: true
+      const revealedPlayer = { ...state.selectedPlayer, revealed: true };
+      updatedPlayerDeck = addToBottom(state.playerDeck, revealedPlayer);
       if (newOuts >= 3) {
         newPhase = 'inningEnd';
       }
@@ -191,15 +196,16 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     
     // 선수 카드: 현재 핸드(2장)에 1장 추가해서 3장 유지
     let newPlayerDeck = state.playerDeck;
-    let drawnPlayer: PlayerCard[] = [];
     
     if (newPlayerDeck.length === 0) {
-      // 덱이 비었으면 재구성
-      newPlayerDeck = shuffle([...starterPlayers]);
+      // 덱이 비었으면 재구성 (이미 순환한 카드들이므로 revealed 유지)
+      const freshPlayers = starterPlayers.map(p => ({ ...p, revealed: false }));
+      newPlayerDeck = shuffle(freshPlayers);
     }
     
     const { drawn, remaining } = drawPlayers(newPlayerDeck, 1);
-    drawnPlayer = drawn;
+    // 핸드에 뽑힌 카드는 revealed: true
+    const drawnPlayer = drawn.map(p => ({ ...p, revealed: true }));
     newPlayerDeck = remaining;
     
     // 기존 핸드(2장) + 새로 뽑은 1장 = 3장
@@ -242,18 +248,24 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       return;
     }
     
-    // 루상 주자들을 덱 하단으로
+    // 루상 주자들을 덱 하단으로 (revealed: true 유지)
     let newPlayerDeck = state.playerDeck;
-    if (state.bases.third) newPlayerDeck = addToBottom(newPlayerDeck, state.bases.third);
-    if (state.bases.second) newPlayerDeck = addToBottom(newPlayerDeck, state.bases.second);
-    if (state.bases.first) newPlayerDeck = addToBottom(newPlayerDeck, state.bases.first);
+    if (state.bases.third) newPlayerDeck = addToBottom(newPlayerDeck, { ...state.bases.third, revealed: true });
+    if (state.bases.second) newPlayerDeck = addToBottom(newPlayerDeck, { ...state.bases.second, revealed: true });
+    if (state.bases.first) newPlayerDeck = addToBottom(newPlayerDeck, { ...state.bases.first, revealed: true });
+    
+    // 핸드에 남은 카드들도 덱 뒤로 (revealed: true로)
+    state.playerHand.forEach(p => {
+      newPlayerDeck = addToBottom(newPlayerDeck, { ...p, revealed: true });
+    });
     
     // 트럼프덱 재셔플
     const reshuffledPoker = shuffle(createPokerDeck());
     const { drawn: pokerHand, remaining: pokerDeck } = drawPokerCards(reshuffledPoker, HAND_SIZE);
     
-    // 새 이닝 첫 타석: 3장 드로우
-    const { drawn: playerHand, remaining: playerDeckAfter } = drawPlayers(newPlayerDeck, 3);
+    // 새 이닝 첫 타석: 3장 드로우 (핸드에 온 카드는 revealed: true)
+    const { drawn, remaining: playerDeckAfter } = drawPlayers(newPlayerDeck, 3);
+    const playerHand = drawn.map(p => ({ ...p, revealed: true }));
     
     const newTargetPoints = BASE_TARGET_POINTS + (state.currentInning * 50);
     

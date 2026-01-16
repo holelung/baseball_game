@@ -37,6 +37,7 @@ export function GameBoard() {
   } = useGameStore();
 
   const [showGuide, setShowGuide] = useState(false);
+  const [showDeckQueue, setShowDeckQueue] = useState(false);
 
   useEffect(() => {
     initGame();
@@ -72,7 +73,12 @@ export function GameBoard() {
         </div>
         
         <div className="text-center text-gray-400 text-xs sm:text-sm">
-          <div>선수덱: {playerDeck.length}장</div>
+          <button
+            onClick={() => setShowDeckQueue(true)}
+            className="hover:text-blue-400 underline cursor-pointer"
+          >
+            선수덱: {playerDeck.length}장 (클릭하여 확인)
+          </button>
           <div>트럼프덱: {pokerDeck.length}장</div>
         </div>
       </div>
@@ -245,16 +251,77 @@ export function GameBoard() {
         )}
       </div>
 
-      {/* 다음 선수 미리보기 */}
+      {/* 다음 선수 미리보기 (revealed만 표시) */}
       {playerDeck.length > 0 && phase === 'selectPlayer' && (
         <div className="bg-gray-800/30 rounded-lg p-3">
           <div className="text-gray-400 text-xs mb-2">다음에 나올 선수:</div>
           <div className="flex gap-2">
             {playerDeck.slice(0, 3).map((player, idx) => (
               <div key={player.id} className="text-gray-500 text-xs">
-                {idx + 1}. {player.name}
+                {idx + 1}. {player.revealed ? player.name : '???'}
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* 선수덱 큐 모달 */}
+      {showDeckQueue && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-white text-lg font-bold">선수덱 순서 (Queue)</h3>
+              <button
+                onClick={() => setShowDeckQueue(false)}
+                className="text-gray-400 hover:text-white text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="text-gray-400 text-sm mb-4">
+              덱 앞쪽(먼저 나옴) → 덱 뒤쪽(나중에 나옴)
+            </div>
+            
+            <div className="flex flex-wrap gap-2">
+              {playerDeck.map((player, idx) => (
+                <div
+                  key={`${player.id}-${idx}`}
+                  className={`w-20 h-28 rounded-lg flex flex-col items-center justify-center text-xs
+                    ${player.revealed 
+                      ? 'bg-gradient-to-br from-blue-600 to-blue-800 text-white' 
+                      : 'bg-gradient-to-br from-gray-600 to-gray-800 text-gray-400'
+                    }`}
+                >
+                  <div className="text-[10px] text-gray-300 mb-1">#{idx + 1}</div>
+                  {player.revealed ? (
+                    <>
+                      <div className="text-lg">⚾</div>
+                      <div className="font-semibold text-center px-1">{player.name}</div>
+                      <div className="text-[10px] opacity-75">
+                        타율 {(player.battingAverage * 100).toFixed(0)}%
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-2xl">❓</div>
+                      <div className="font-semibold">???</div>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+            
+            <div className="mt-4 text-gray-500 text-xs">
+              * 사용한 적 있는 선수는 순서가 공개됩니다
+            </div>
+            
+            <button
+              onClick={() => setShowDeckQueue(false)}
+              className="mt-4 w-full py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg"
+            >
+              닫기
+            </button>
           </div>
         </div>
       )}

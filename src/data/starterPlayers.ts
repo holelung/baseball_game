@@ -12,6 +12,7 @@ export const starterPlayers: PlayerCard[] = [
     battingAverage: 0.280,
     power: 3,
     speed: 8,
+    revealed: false,
   },
   {
     id: 'p2',
@@ -20,6 +21,7 @@ export const starterPlayers: PlayerCard[] = [
     battingAverage: 0.290,
     power: 4,
     speed: 6,
+    revealed: false,
   },
   {
     id: 'p3',
@@ -28,6 +30,7 @@ export const starterPlayers: PlayerCard[] = [
     battingAverage: 0.300,
     power: 6,
     speed: 5,
+    revealed: false,
   },
   {
     id: 'p4',
@@ -36,6 +39,7 @@ export const starterPlayers: PlayerCard[] = [
     battingAverage: 0.270,
     power: 9,
     speed: 3,
+    revealed: false,
   },
   {
     id: 'p5',
@@ -44,6 +48,7 @@ export const starterPlayers: PlayerCard[] = [
     battingAverage: 0.260,
     power: 7,
     speed: 4,
+    revealed: false,
   },
   {
     id: 'p6',
@@ -52,6 +57,7 @@ export const starterPlayers: PlayerCard[] = [
     battingAverage: 0.265,
     power: 5,
     speed: 5,
+    revealed: false,
   },
   {
     id: 'p7',
@@ -60,6 +66,7 @@ export const starterPlayers: PlayerCard[] = [
     battingAverage: 0.250,
     power: 4,
     speed: 5,
+    revealed: false,
   },
   {
     id: 'p8',
@@ -68,6 +75,7 @@ export const starterPlayers: PlayerCard[] = [
     battingAverage: 0.240,
     power: 3,
     speed: 6,
+    revealed: false,
   },
   {
     id: 'p9',
@@ -76,6 +84,7 @@ export const starterPlayers: PlayerCard[] = [
     battingAverage: 0.230,
     power: 2,
     speed: 7,
+    revealed: false,
   },
   {
     id: 'p10',
@@ -84,5 +93,6 @@ export const starterPlayers: PlayerCard[] = [
     battingAverage: 0.275,
     power: 3,
     speed: 7,
+    revealed: false,
   },
 ];
