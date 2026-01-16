@@ -138,9 +138,10 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     const state = get();
     if (state.phase !== 'selectCards') return;
     if (!state.selectedPlayer) return;
+    if (state.selectedPokerCards.length === 0) return; // 카드 선택 필수
     
-    // 전체 핸드로 족보 판정 (8장)
-    const handResult = evaluateHand(state.pokerHand);
+    // 선택한 카드로 족보 판정
+    const handResult = evaluateHand(state.selectedPokerCards);
     
     // 확률 기반 플레이 실행
     const playResult = executePlay(handResult, state.selectedPlayer, state.bases);
