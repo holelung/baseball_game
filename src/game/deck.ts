@@ -123,7 +123,7 @@ export function getStatEmoji(stat: StatType): string {
     case 'power': return '💥';
     case 'contact': return '🎯';
     case 'speed': return '⚡';
-    case 'eye': return '👁️';
+    case 'eye': return '👀';
   }
 }
 

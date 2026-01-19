@@ -19,8 +19,8 @@ export function ActionCardComponent({ card, onClick, disabled, highlighted }: Ac
       className={`
         w-16 h-24 sm:w-20 sm:h-28
         bg-gradient-to-br ${bgGradient}
-        rounded-lg shadow-lg
-        flex flex-col items-center justify-between p-1.5 sm:p-2
+        rounded-lg shadow-lg overflow-hidden
+        flex flex-col items-center justify-between p-1 sm:p-1.5
         border-2 transition-all duration-200
         ${card.selected
           ? 'border-yellow-400 ring-2 ring-yellow-400 -translate-y-2 scale-105'
@@ -35,20 +35,20 @@ export function ActionCardComponent({ card, onClick, disabled, highlighted }: Ac
       `}
     >
       {/* 상단 좌측: 랭크 + 속성 */}
-      <div className="self-start text-xs sm:text-sm font-bold text-white">
-        <div className="leading-none">{rankDisplay}</div>
-        <div className="text-base sm:text-lg leading-none">{statEmoji}</div>
+      <div className="self-start text-[10px] sm:text-xs font-bold text-white">
+        <div className="leading-tight">{rankDisplay}</div>
+        <div className="text-sm sm:text-base leading-tight">{statEmoji}</div>
       </div>
 
       {/* 중앙: 큰 속성 이모지 */}
-      <div className="text-2xl sm:text-3xl">
+      <div className="text-xl sm:text-2xl flex-shrink-0">
         {statEmoji}
       </div>
 
       {/* 하단 우측: 랭크 + 속성 (뒤집힌) */}
-      <div className="self-end text-xs sm:text-sm font-bold rotate-180 text-white">
-        <div className="leading-none">{rankDisplay}</div>
-        <div className="text-base sm:text-lg leading-none">{statEmoji}</div>
+      <div className="self-end text-[10px] sm:text-xs font-bold rotate-180 text-white">
+        <div className="leading-tight">{rankDisplay}</div>
+        <div className="text-sm sm:text-base leading-tight">{statEmoji}</div>
       </div>
     </div>
   );

@@ -43,7 +43,7 @@ export function PlayerCardComponent({ player, onClick, disabled, small }: Player
                 key={tag}
                 className={`${tagColors[tag]} text-white text-[10px] px-1 rounded`}
               >
-                {tag === 'speed' ? '🏃' : tag === 'power' ? '💪' : tag === 'contact' ? '🎯' : '👁️'}
+                {tag === 'speed' ? '🏃' : tag === 'power' ? '💪' : tag === 'contact' ? '🎯' : '👀'}
               </span>
             ))}
           </div>

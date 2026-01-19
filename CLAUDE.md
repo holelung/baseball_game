@@ -51,3 +51,4 @@ Zustand 단일 스토어. 게임 상태와 액션을 모두 포함.
 - `src/game/` 내 함수는 순수 함수로 유지 (side-effect 없음)
 - 상태 변경은 반드시 gameStore 액션을 통해 수행
 - 선수 카드의 `revealed` 속성으로 덱 순서 공개 여부 추적
+- 기능 변경 이후 `CHANGELOG.md`기록 및 `git commit` 진행
