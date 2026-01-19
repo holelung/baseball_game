@@ -1,4 +1,4 @@
-import { PlayerCard, ActionCard } from '../game/types';
+import { PlayerCard } from '../game/types';
 
 interface PlayerCardProps {
   player: PlayerCard;
@@ -15,8 +15,8 @@ export function PlayerCardComponent({ player, onClick, disabled, small }: Player
     eye: 'bg-purple-500',
   };
 
-  const sizeClasses = small 
-    ? 'w-16 h-20 text-xs' 
+  const sizeClasses = small
+    ? 'w-16 h-20 text-xs'
     : 'w-28 h-36';
 
   return (
@@ -53,40 +53,6 @@ export function PlayerCardComponent({ player, onClick, disabled, small }: Player
           </div>
         </>
       )}
-    </div>
-  );
-}
-
-interface ActionCardProps {
-  action: ActionCard;
-}
-
-export function ActionCardComponent({ action }: ActionCardProps) {
-  const typeStyles: Record<string, { bg: string; icon: string }> = {
-    single: { bg: 'from-green-400 to-green-600', icon: '🟢' },
-    double: { bg: 'from-blue-400 to-blue-600', icon: '🔵' },
-    triple: { bg: 'from-purple-400 to-purple-600', icon: '🟣' },
-    homerun: { bg: 'from-yellow-400 to-orange-500', icon: '💥' },
-    walk: { bg: 'from-teal-400 to-teal-600', icon: '🚶' },
-    groundout: { bg: 'from-gray-400 to-gray-600', icon: '⬇️' },
-    flyout: { bg: 'from-gray-500 to-gray-700', icon: '⬆️' },
-    strikeout: { bg: 'from-red-500 to-red-700', icon: '❌' },
-  };
-
-  const style = typeStyles[action.type];
-
-  return (
-    <div
-      className={`
-        w-32 h-44
-        bg-gradient-to-br ${style.bg}
-        rounded-xl shadow-lg border-2 border-white/30
-        flex flex-col items-center justify-center gap-2 p-3
-      `}
-    >
-      <div className="text-4xl">{style.icon}</div>
-      <div className="font-bold text-white text-lg">{action.name}</div>
-      <div className="text-white/80 text-xs text-center">{action.description}</div>
     </div>
   );
 }

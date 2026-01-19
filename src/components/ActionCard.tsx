@@ -1,5 +1,5 @@
 import { ActionCard } from '../game/types';
-import { getRankDisplay, getStatEmoji, getStatColorClass, getStatBgClass } from '../game/deck';
+import { getRankDisplay, getStatEmoji, getStatBgClass } from '../game/deck';
 
 interface ActionCardProps {
   card: ActionCard;
@@ -11,7 +11,6 @@ interface ActionCardProps {
 export function ActionCardComponent({ card, onClick, disabled, highlighted }: ActionCardProps) {
   const rankDisplay = getRankDisplay(card.rank);
   const statEmoji = getStatEmoji(card.stat);
-  const colorClass = getStatColorClass(card.stat);
   const bgGradient = getStatBgClass(card.stat);
 
   return (

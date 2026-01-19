@@ -229,7 +229,6 @@ export function executePlay(
   }
 
   let runsScored = 0;
-  let newBases = bases;
   const isOut = baseballResult === 'out';
 
   if (!isOut) {
@@ -247,7 +246,6 @@ export function executePlay(
 
     const advanceResult = advanceRunners(bases, batter, advanceCount);
     runsScored = advanceResult.runsScored;
-    newBases = advanceResult.newBases;
   }
 
   // Point 계산
