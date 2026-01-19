@@ -27,12 +27,6 @@ export function ScoreBreakdown({ breakdown, modeResult, isOut, hasSynergy }: Sco
 
       {/* 점수 분해 */}
       <div className="bg-gray-900/50 rounded-lg p-3 space-y-2">
-        {/* 카드 칩 */}
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-gray-400">카드 합계</span>
-          <span className="text-blue-400 font-bold">+{breakdown.cardChips}</span>
-        </div>
-
         {/* 모드 보너스 */}
         <div className="flex items-center justify-between text-sm">
           <span className="text-gray-400">{modeResult.name} 보너스</span>
@@ -66,7 +60,7 @@ export function ScoreBreakdown({ breakdown, modeResult, isOut, hasSynergy }: Sco
 
       {/* 계산식 요약 */}
       <div className="text-center text-gray-500 text-xs">
-        {breakdown.cardChips} + {breakdown.modeBonus}
+        {breakdown.modeBonus}
         {hasSynergy && breakdown.synergyBonus > 0 && ` + ${breakdown.synergyBonus}`}
         {breakdown.runBonus > 0 && ` + ${breakdown.runBonus}`}
         {' '}= {breakdown.finalScore}P

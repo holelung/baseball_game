@@ -190,17 +190,15 @@ export function executePlay(
     runsScored = advanceResult.runsScored;
   }
 
-  // 포인트 계산 (단순화)
-  const cardChips = modeResult.cardChips;
+  // 포인트 계산 (모드 보너스 + 시너지 + 득점)
   const modeBonus = modeInfo.bonusPoints;
   const synergyBonus = synergy.hasSynergy ? 20 : 0;
   const runBonus = runsScored * 20;
 
-  const basePoints = cardChips + modeBonus + synergyBonus;
+  const basePoints = modeBonus + synergyBonus;
   const pointsEarned = isHit ? basePoints + runBonus : 0;
 
   const scoreBreakdown: ScoreBreakdown = {
-    cardChips,
     modeBonus,
     synergyBonus,
     runBonus,

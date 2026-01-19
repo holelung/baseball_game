@@ -75,11 +75,6 @@ export function HandDisplay({ modeResult, batter }: ModeDisplayProps) {
         <StatBadge icon="👟" count={modeResult.statCount.speed} active={modeResult.statCount.speed >= 3} />
         <StatBadge icon="👀" count={modeResult.statCount.eye} active={modeResult.statCount.eye >= 3} />
       </div>
-
-      {/* 카드 칩 합계 */}
-      <div className="mt-2 text-center text-white/70 text-sm">
-        카드 합계: <span className="text-yellow-300 font-bold">{modeResult.cardChips}</span> 칩
-      </div>
     </div>
   );
 }

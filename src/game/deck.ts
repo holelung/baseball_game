@@ -1,4 +1,4 @@
-import { PlayerCard, ActionCard, StatType, ActionRank } from './types';
+import { PlayerCard, ActionCard, StatType } from './types';
 
 /**
  * Fisher-Yates 셔플 알고리즘
@@ -49,21 +49,20 @@ export function returnToDeck(deck: PlayerCard[], players: PlayerCard[]): PlayerC
 // ========== 액션 카드 덱 관련 ==========
 
 const STATS: StatType[] = ['power', 'contact', 'speed', 'eye'];
-const RANKS: ActionRank[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
+const CARDS_PER_STAT = 13; // 속성당 13장 (총 52장)
 
 /**
- * 52장의 액션 카드 덱 생성
+ * 52장의 액션 카드 덱 생성 (속성만 있음)
  */
 export function createActionDeck(): ActionCard[] {
   const deck: ActionCard[] = [];
   let id = 0;
 
   for (const stat of STATS) {
-    for (const rank of RANKS) {
+    for (let i = 0; i < CARDS_PER_STAT; i++) {
       deck.push({
         id: `action_${id++}`,
         stat,
-        rank,
         selected: false,
       });
     }
@@ -100,19 +99,6 @@ export function toggleActionCardSelection(cards: ActionCard[], cardId: string): 
  */
 export function getSelectedActionCards(cards: ActionCard[]): ActionCard[] {
   return cards.filter(card => card.selected);
-}
-
-/**
- * 카드 랭크를 표시 문자로 변환
- */
-export function getRankDisplay(rank: ActionRank): string {
-  switch (rank) {
-    case 1: return 'A';
-    case 11: return 'J';
-    case 12: return 'Q';
-    case 13: return 'K';
-    default: return rank.toString();
-  }
 }
 
 /**

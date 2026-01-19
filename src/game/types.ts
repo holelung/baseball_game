@@ -16,17 +16,13 @@ export interface PlayerCard {
 
 // ========== 야구 액션 카드 시스템 ==========
 
-// 4가지 속성 (트럼프 무늬 대체)
+// 4가지 속성
 export type StatType = 'power' | 'contact' | 'speed' | 'eye';
 
-// 액션 카드 숫자 (1=A, 11=J, 12=Q, 13=K)
-export type ActionRank = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13;
-
-// 액션 카드
+// 액션 카드 (속성만 존재, 숫자 없음)
 export interface ActionCard {
   id: string;
   stat: StatType;
-  rank: ActionRank;
   selected: boolean; // 플레이어가 선택했는지
 }
 
@@ -55,7 +51,6 @@ export interface ModeResult {
   name: string;
   description: string;
   cards: ActionCard[];     // 선택한 카드들
-  cardChips: number;       // 카드 숫자 합계
   statCount: StatCount;    // 속성별 카드 수
   // 효과
   hitBonus: number;        // 안타 확률 보너스
@@ -76,7 +71,6 @@ export type BaseballResult =
 
 // 점수 계산 분해 (단순화)
 export interface ScoreBreakdown {
-  cardChips: number;       // 카드 숫자 합계
   modeBonus: number;       // 모드 보너스
   synergyBonus: number;    // 선수-모드 시너지 보너스
   runBonus: number;        // 득점 보너스 (득점 × 20)

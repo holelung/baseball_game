@@ -68,17 +68,6 @@ export function countStats(cards: ActionCard[]): StatCount {
 }
 
 /**
- * 선택한 카드들의 숫자 합계 계산
- * A(1)는 14로 계산
- */
-export function calculateCardChips(cards: ActionCard[]): number {
-  return cards.reduce((sum, card) => {
-    const chipValue = card.rank === 1 ? 14 : card.rank;
-    return sum + chipValue;
-  }, 0);
-}
-
-/**
  * 속성 집계로 액션 모드 판정
  */
 export function determineMode(statCount: StatCount): ActionMode {
@@ -117,7 +106,6 @@ export function evaluateActionMode(cards: ActionCard[]): ModeResult {
       name: MODE_INFO['normal'].name,
       description: MODE_INFO['normal'].description,
       cards: [],
-      cardChips: 0,
       statCount: { power: 0, contact: 0, speed: 0, eye: 0 },
       hitBonus: 0,
       extraBaseChance: 0,
@@ -127,14 +115,12 @@ export function evaluateActionMode(cards: ActionCard[]): ModeResult {
   const statCount = countStats(cards);
   const mode = determineMode(statCount);
   const modeInfo = MODE_INFO[mode];
-  const cardChips = calculateCardChips(cards);
 
   return {
     mode,
     name: modeInfo.name,
     description: modeInfo.description,
     cards,
-    cardChips,
     statCount,
     hitBonus: modeInfo.hitBonus,
     extraBaseChance: modeInfo.extraBaseChance,

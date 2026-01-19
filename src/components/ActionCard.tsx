@@ -1,5 +1,5 @@
 import { ActionCard } from '../game/types';
-import { getRankDisplay, getStatEmoji, getStatBgClass } from '../game/deck';
+import { getStatEmoji, getStatBgClass } from '../game/deck';
 
 interface ActionCardProps {
   card: ActionCard;
@@ -9,7 +9,6 @@ interface ActionCardProps {
 }
 
 export function ActionCardComponent({ card, onClick, disabled, highlighted }: ActionCardProps) {
-  const rankDisplay = getRankDisplay(card.rank);
   const statEmoji = getStatEmoji(card.stat);
   const bgGradient = getStatBgClass(card.stat);
 
@@ -20,7 +19,7 @@ export function ActionCardComponent({ card, onClick, disabled, highlighted }: Ac
         w-14 h-20 sm:w-16 sm:h-24
         bg-gradient-to-br ${bgGradient}
         rounded-lg shadow-lg
-        flex flex-col items-center justify-between py-1
+        flex flex-col items-center justify-center
         border-2 transition-all duration-200
         ${card.selected
           ? 'border-yellow-400 ring-2 ring-yellow-400 -translate-y-2 scale-105'
@@ -34,21 +33,9 @@ export function ActionCardComponent({ card, onClick, disabled, highlighted }: Ac
         ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
       `}
     >
-      {/* 상단: 랭크 + 속성 */}
-      <div className="flex items-center gap-0.5 text-white font-bold">
-        <span className="text-sm sm:text-base">{rankDisplay}</span>
-        <span className="text-xs sm:text-sm">{statEmoji}</span>
-      </div>
-
-      {/* 중앙: 큰 속성 이모지 */}
-      <div className="text-xl sm:text-2xl">
+      {/* 속성 이모지만 표시 */}
+      <div className="text-3xl sm:text-4xl">
         {statEmoji}
-      </div>
-
-      {/* 하단: 속성 + 랭크 (뒤집힌) */}
-      <div className="flex items-center gap-0.5 text-white font-bold rotate-180">
-        <span className="text-sm sm:text-base">{rankDisplay}</span>
-        <span className="text-xs sm:text-sm">{statEmoji}</span>
       </div>
     </div>
   );
