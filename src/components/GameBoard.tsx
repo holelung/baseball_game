@@ -6,6 +6,7 @@ import { Hand } from './Hand';
 import { ActionHand } from './ActionCard';
 import { HandDisplay, AvailableHandsGuide } from './HandDisplay';
 import { PlayerCardComponent } from './Card';
+import { ScoreBreakdown } from './ScoreBreakdown';
 
 export function GameBoard() {
   const {
@@ -163,23 +164,41 @@ export function GameBoard() {
         {phase === 'showResult' && currentResult && (
           <div className="text-center space-y-4">
             <div className={`text-xl sm:text-2xl font-bold ${
-              currentResult.baseballResult === 'out' 
-                ? 'text-red-400' 
+              currentResult.baseballResult === 'out'
+                ? 'text-red-400'
                 : currentResult.baseballResult === 'homerun'
                   ? 'text-yellow-400'
                   : 'text-green-400'
             }`}>
-              {currentResult.description}
+              {currentResult.baseballResult === 'out'
+                ? `${selectedPlayer?.name} - 아웃!`
+                : currentResult.baseballResult === 'homerun'
+                  ? `${selectedPlayer?.name}의 홈런!`
+                  : `${selectedPlayer?.name}의 ${currentResult.handResult.name}!`
+              }
             </div>
-            
+
             {currentResult.wasLucky && (
               <div className="text-yellow-300 animate-pulse">
                 Lucky Hit!
               </div>
             )}
-            
+
             <HandDisplay handResult={currentResult.handResult} />
-            
+
+            {/* 점수 계산 분해 */}
+            <ScoreBreakdown
+              breakdown={currentResult.scoreBreakdown}
+              handResult={currentResult.handResult}
+              isOut={currentResult.baseballResult === 'out'}
+            />
+
+            {currentResult.runsScored > 0 && (
+              <div className="text-green-400 text-lg font-bold animate-bounce">
+                {currentResult.runsScored}점 득점!
+              </div>
+            )}
+
             <button
               onClick={nextTurn}
               className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"

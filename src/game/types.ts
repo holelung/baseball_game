@@ -85,6 +85,19 @@ export type BaseballResult =
   | 'triple'        // 3루타
   | 'homerun';      // 홈런
 
+// 점수 계산 분해
+export interface ScoreBreakdown {
+  baseChips: number;       // 기본 칩 (족보에서)
+  cardChips: number;       // 카드 칩 합계 (선택한 카드 숫자 합)
+  totalChips: number;      // 총 칩 (기본 + 카드)
+  multiplier: number;      // 배율
+  baseScore: number;       // 기본 점수 (chips × mult)
+  runBonus: number;        // 득점 보너스 (득점 × 20)
+  overflowBonus: number;   // 확률 초과 보너스
+  specialMultiplier: number; // 특수 효과 배율 (파워아이 홈런 등)
+  finalScore: number;      // 최종 점수
+}
+
 // 족보에 따른 야구 결과
 export interface PlayResult {
   baseballResult: BaseballResult;
@@ -95,6 +108,8 @@ export interface PlayResult {
   // 확률 시스템
   hitProbability: number; // 최종 안타 확률
   wasLucky: boolean;      // 확률 판정 성공 여부
+  // 점수 분해
+  scoreBreakdown: ScoreBreakdown;
 }
 
 // 루 상태 (null이면 주자 없음)

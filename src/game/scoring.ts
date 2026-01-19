@@ -1,4 +1,4 @@
-import { PlayerCard, BaseState, ActionResult, HandResult, ActionHandRank, BaseballResult, PlayResult } from './types';
+import { PlayerCard, BaseState, ActionResult, HandResult, ActionHandRank, BaseballResult, PlayResult, ScoreBreakdown } from './types';
 
 /**
  * 빈 베이스 상태
@@ -249,19 +249,40 @@ export function executePlay(
   }
 
   // Point 계산
-  let basePoints = isOut ? 0 : mapping.baseScore;
+  const baseChips = isOut ? 0 : handResult.baseChips;
+  // 카드 칩: 선택한 카드들의 숫자 합계 (A=1 또는 14로 계산 - 여기서는 표시값 사용)
+  const cardChips = isOut ? 0 : handResult.cards.reduce((sum, card) => {
+    // A는 14로 계산 (가장 높은 값)
+    const chipValue = card.rank === 1 ? 14 : card.rank;
+    return sum + chipValue;
+  }, 0);
+  const totalChips = baseChips + cardChips;
   const multiplier = handResult.multiplier;
+  const baseScore = totalChips * multiplier;
   const runBonus = runsScored * 20;
   // 확률 1.0 초과 시 추가 보너스
   const overflowBonus = hitProbability > 1.0 ? Math.floor((hitProbability - 1.0) * 50) : 0;
 
   // 파워아이 특수효과: 홈런 시 포인트 1.5배
-  let pointMultiplier = 1;
+  let specialMultiplier = 1;
   if (handResult.rank === 'power_eye' && baseballResult === 'homerun') {
-    pointMultiplier = 1.5;
+    specialMultiplier = 1.5;
   }
 
-  const pointsEarned = Math.floor(((basePoints * multiplier) + runBonus + overflowBonus) * pointMultiplier);
+  const pointsEarned = Math.floor((baseScore + runBonus + overflowBonus) * specialMultiplier);
+
+  // 점수 분해 정보
+  const scoreBreakdown: ScoreBreakdown = {
+    baseChips,
+    cardChips,
+    totalChips,
+    multiplier,
+    baseScore,
+    runBonus,
+    overflowBonus,
+    specialMultiplier,
+    finalScore: pointsEarned,
+  };
 
   // 설명 생성
   const probPercent = Math.min(Math.round(hitProbability * 100), 100);
@@ -287,6 +308,7 @@ export function executePlay(
     description,
     hitProbability,
     wasLucky,
+    scoreBreakdown,
   };
 }
 
