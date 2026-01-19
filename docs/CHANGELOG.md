@@ -6,10 +6,33 @@
 
 ---
 
+## [0.2.1] - 2026-01-19
+
+### Fixed (수정)
+
+#### 선구안 아이콘 변경
+- **변경 전**: 👁️ (단일 눈 - 징그러움)
+- **변경 후**: 👀 (두 눈 - 친근함)
+- 영향 파일: `deck.ts`, `HandDisplay.tsx`, `Card.tsx`, `ACTION_HANDS.md`
+
+#### 카드 오버플로우 수정 (`ActionCard.tsx`)
+하단 숫자가 카드 바깥으로 삐져나오는 문제 수정:
+
+| 항목 | 변경 전 | 변경 후 |
+|------|---------|---------|
+| overflow | - | `overflow-hidden` |
+| padding | `p-1.5 sm:p-2` | `p-1 sm:p-1.5` |
+| 상하단 폰트 | `text-xs sm:text-sm` | `text-[10px] sm:text-xs` |
+| 이모지 폰트 | `text-base sm:text-lg` | `text-sm sm:text-base` |
+| 중앙 이모지 | `text-2xl sm:text-3xl` | `text-xl sm:text-2xl` + `flex-shrink-0` |
+| line-height | `leading-none` | `leading-tight` |
+
+---
+
 ## [0.2.0] - 2026-01-19
 
 ### 개요
-트럼프 카드 시스템(♠♥♦♣)을 야구 속성 시스템(💥파워/🎯컨택/⚡스피드/👁️선구안)으로 전면 교체하고, 28종 족보 판정 로직을 구현했습니다.
+트럼프 카드 시스템(♠♥♦♣)을 야구 속성 시스템(💥파워/🎯컨택/⚡스피드/👀선구안)으로 전면 교체하고, 28종 족보 판정 로직을 구현했습니다.
 
 ### Added (추가)
 
