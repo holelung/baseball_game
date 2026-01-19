@@ -15,33 +15,33 @@ const HAND_STYLES: Record<ActionHandRank, { bg: string; text: string; icon: stri
   'straight':        { bg: 'from-blue-600 to-indigo-600', text: 'text-white', icon: '📊' },
   'flush':           { bg: 'from-purple-500 to-purple-600', text: 'text-white', icon: '🟣' },
   'full_house':      { bg: 'from-purple-600 to-pink-600', text: 'text-white', icon: '🏠' },
-  'four_of_kind':    { bg: 'from-yellow-500 to-orange-500', text: 'text-white', icon: '💥' },
+  'four_of_kind':    { bg: 'from-yellow-500 to-orange-500', text: 'text-white', icon: '💪' },
   'straight_flush':  { bg: 'from-yellow-400 to-red-500', text: 'text-white', icon: '🌟' },
 
   // 속성별 원페어 (Lv.10-13)
-  'power_pair':      { bg: 'from-red-500 to-red-600', text: 'text-white', icon: '💥' },
+  'power_pair':      { bg: 'from-red-500 to-red-600', text: 'text-white', icon: '💪' },
   'contact_pair':    { bg: 'from-blue-500 to-blue-600', text: 'text-white', icon: '🎯' },
-  'speed_pair':      { bg: 'from-green-500 to-green-600', text: 'text-white', icon: '⚡' },
+  'speed_pair':      { bg: 'from-green-500 to-green-600', text: 'text-white', icon: '👟' },
   'eye_pair':        { bg: 'from-yellow-500 to-amber-600', text: 'text-white', icon: '👀' },
 
   // 속성별 트리플 (Lv.14-17)
-  'power_triple':    { bg: 'from-red-600 to-red-700', text: 'text-white', icon: '💥💥💥' },
+  'power_triple':    { bg: 'from-red-600 to-red-700', text: 'text-white', icon: '💪💪💪' },
   'contact_triple':  { bg: 'from-blue-600 to-blue-700', text: 'text-white', icon: '🎯🎯🎯' },
-  'speed_triple':    { bg: 'from-green-600 to-green-700', text: 'text-white', icon: '⚡⚡⚡' },
+  'speed_triple':    { bg: 'from-green-600 to-green-700', text: 'text-white', icon: '👟👟👟' },
   'eye_triple':      { bg: 'from-yellow-600 to-amber-700', text: 'text-white', icon: '👀👀👀' },
 
   // 이중 속성 투페어 (Lv.18-23)
-  'power_contact':   { bg: 'from-red-500 to-blue-500', text: 'text-white', icon: '💥🎯' },
-  'power_speed':     { bg: 'from-red-500 to-green-500', text: 'text-white', icon: '💥⚡' },
-  'power_eye':       { bg: 'from-red-500 to-yellow-500', text: 'text-white', icon: '💥👀' },
-  'contact_speed':   { bg: 'from-blue-500 to-green-500', text: 'text-white', icon: '🎯⚡' },
+  'power_contact':   { bg: 'from-red-500 to-blue-500', text: 'text-white', icon: '💪🎯' },
+  'power_speed':     { bg: 'from-red-500 to-green-500', text: 'text-white', icon: '💪👟' },
+  'power_eye':       { bg: 'from-red-500 to-yellow-500', text: 'text-white', icon: '💪👀' },
+  'contact_speed':   { bg: 'from-blue-500 to-green-500', text: 'text-white', icon: '🎯👟' },
   'contact_eye':     { bg: 'from-blue-500 to-yellow-500', text: 'text-white', icon: '🎯👀' },
-  'speed_eye':       { bg: 'from-green-500 to-yellow-500', text: 'text-white', icon: '⚡👀' },
+  'speed_eye':       { bg: 'from-green-500 to-yellow-500', text: 'text-white', icon: '👟👀' },
 
   // 상위 야구 전용 족보 (Lv.24-28)
   'batting_eye':     { bg: 'from-yellow-600 to-orange-600', text: 'text-white', icon: '👀👀👀👀' },
-  'power_surge':     { bg: 'from-red-600 to-orange-500', text: 'text-white', icon: '💥⚡💥' },
-  'speed_star':      { bg: 'from-green-600 to-cyan-500', text: 'text-white', icon: '⚡⭐⚡' },
+  'power_surge':     { bg: 'from-red-600 to-orange-500', text: 'text-white', icon: '💪👟💪' },
+  'speed_star':      { bg: 'from-green-600 to-cyan-500', text: 'text-white', icon: '👟⭐👟' },
   'contact_master':  { bg: 'from-blue-600 to-purple-500', text: 'text-white', icon: '🎯👑🎯' },
   'perfect_swing':   { bg: 'from-yellow-400 via-red-500 to-purple-600', text: 'text-white', icon: '⚾🌟⚾' },
 };
@@ -166,12 +166,12 @@ export function AvailableHandsGuide({ selectedCount }: AvailableHandsProps) {
 
         {/* 속성별 족보 */}
         <div>
-          <div className="text-gray-500 text-[10px] mb-1">속성별 족보 (💥파워 🎯컨택 ⚡스피드 👀선구안)</div>
+          <div className="text-gray-500 text-[10px] mb-1">속성별 족보 (💪파워 🎯컨택 👟스피드 👀선구안)</div>
           <div className="grid grid-cols-2 gap-1 text-gray-300">
             <div>속성 페어 +5~8%</div>
             <div>속성 트리플 +18%</div>
             <div className="text-blue-400">🎯컨택 트리플 = 안타 확정!</div>
-            <div className="text-green-400">⚡스피드 트리플 = 진루+1</div>
+            <div className="text-green-400">👟스피드 트리플 = 진루+1</div>
           </div>
         </div>
 
@@ -179,10 +179,10 @@ export function AvailableHandsGuide({ selectedCount }: AvailableHandsProps) {
         <div>
           <div className="text-gray-500 text-[10px] mb-1">이중 속성 투페어</div>
           <div className="grid grid-cols-2 gap-1 text-gray-300">
-            <div>💥🎯 파워컨택 +15%</div>
-            <div>🎯⚡ 컨택스피드 +15%</div>
+            <div>💪🎯 파워컨택 +15%</div>
+            <div>🎯👟 컨택스피드 +15%</div>
             <div>🎯👀 컨택아이 +18%</div>
-            <div>⚡👀 스피드아이 = 2루 스타트</div>
+            <div>👟👀 스피드아이 = 2루 스타트</div>
           </div>
         </div>
 
@@ -191,8 +191,8 @@ export function AvailableHandsGuide({ selectedCount }: AvailableHandsProps) {
           <div className="text-gray-500 text-[10px] mb-1">상위 야구 전용 족보</div>
           <div className="grid grid-cols-2 gap-1">
             <div className="text-yellow-400">👀 배팅아이 (선구안4+) +35%</div>
-            <div className="text-red-400">💥 파워서지 (파워3+ 합30+) = 홈런</div>
-            <div className="text-green-400">⚡ 스피드스타 (스피드 스트레이트) +40%</div>
+            <div className="text-red-400">💪 파워서지 (파워3+ 합30+) = 홈런</div>
+            <div className="text-green-400">👟 스피드스타 (스피드 스트레이트) +40%</div>
             <div className="text-blue-400">🎯 컨택마스터 (컨택 풀하우스) = 확정</div>
             <div className="text-purple-400 col-span-2">⚾ 퍼펙트스윙 (4속성+페어) = 결과 업그레이드!</div>
           </div>

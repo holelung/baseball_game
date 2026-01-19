@@ -120,9 +120,9 @@ export function getRankDisplay(rank: ActionRank): string {
  */
 export function getStatEmoji(stat: StatType): string {
   switch (stat) {
-    case 'power': return '💥';
+    case 'power': return '💪';
     case 'contact': return '🎯';
-    case 'speed': return '⚡';
+    case 'speed': return '👟';
     case 'eye': return '👀';
   }
 }
