@@ -14,41 +14,67 @@ export interface PlayerCard {
   revealed: boolean;
 }
 
-// ========== 트럼프 카드 시스템 ==========
+// ========== 야구 액션 카드 시스템 ==========
 
-// 트럼프 카드 무늬
-export type Suit = 'spade' | 'heart' | 'diamond' | 'club';
+// 4가지 속성 (트럼프 무늬 대체)
+export type StatType = 'power' | 'contact' | 'speed' | 'eye';
 
-// 트럼프 카드 숫자 (1=A, 11=J, 12=Q, 13=K)
-export type Rank = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13;
+// 액션 카드 숫자 (1=A, 11=J, 12=Q, 13=K)
+export type ActionRank = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13;
 
-// 트럼프 카드
-export interface PokerCard {
+// 액션 카드
+export interface ActionCard {
   id: string;
-  suit: Suit;
-  rank: Rank;
+  stat: StatType;
+  rank: ActionRank;
   selected: boolean; // 플레이어가 선택했는지
 }
 
-// 족보 타입
-export type HandRank = 
-  | 'high_card'         // 하이카드
-  | 'one_pair'          // 원페어
-  | 'two_pair'          // 투페어
-  | 'three_of_kind'     // 트리플
-  | 'straight'          // 스트레이트
-  | 'flush'             // 플러시
-  | 'full_house'        // 풀하우스
-  | 'four_of_kind'      // 포카드
-  | 'straight_flush';   // 스트레이트 플러시
+// 28종 족보 타입
+export type ActionHandRank =
+  // 기본 포커 족보 (Lv.1-9)
+  | 'high_card'             // 하이카드
+  | 'one_pair'              // 원페어
+  | 'two_pair'              // 투페어
+  | 'three_of_kind'         // 트리플
+  | 'straight'              // 스트레이트
+  | 'flush'                 // 플러시
+  | 'full_house'            // 풀하우스
+  | 'four_of_kind'          // 포카드
+  | 'straight_flush'        // 스트레이트 플러시
+  // 속성별 원페어 (Lv.10-13)
+  | 'power_pair'            // 파워 페어
+  | 'contact_pair'          // 컨택 페어
+  | 'speed_pair'            // 스피드 페어
+  | 'eye_pair'              // 선구안 페어
+  // 속성별 트리플 (Lv.14-17)
+  | 'power_triple'          // 파워 트리플
+  | 'contact_triple'        // 컨택 트리플 (안타 확정!)
+  | 'speed_triple'          // 스피드 트리플
+  | 'eye_triple'            // 선구안 트리플
+  // 이중 속성 투페어 (Lv.18-23)
+  | 'power_contact'         // 파워컨택
+  | 'power_speed'           // 파워스피드
+  | 'power_eye'             // 파워아이
+  | 'contact_speed'         // 컨택스피드
+  | 'contact_eye'           // 컨택아이
+  | 'speed_eye'             // 스피드아이
+  // 상위 야구 전용 족보 (Lv.24-28)
+  | 'batting_eye'           // 배팅 아이 (선구안 4장+)
+  | 'power_surge'           // 파워 서지 (파워 3장+ & 합계 30+)
+  | 'speed_star'            // 스피드 스타 (스피드로만 스트레이트)
+  | 'contact_master'        // 컨택 마스터 (컨택으로만 풀하우스)
+  | 'perfect_swing';        // 퍼펙트 스윙 (4속성 각 1장+ & 페어)
 
 // 족보 결과
 export interface HandResult {
-  rank: HandRank;
+  rank: ActionHandRank;
   name: string;
-  cards: PokerCard[];     // 족보를 구성하는 카드들
-  multiplier: number;     // 점수 배율
-  hitBonus: number;       // 안타 확률 보너스 (0.0 ~ 1.0+)
+  cards: ActionCard[];     // 족보를 구성하는 카드들
+  multiplier: number;      // 점수 배율
+  hitBonus: number;        // 안타 확률 보너스 (0.0 ~ 1.0+)
+  baseChips: number;       // 기본 칩
+  specialEffect?: string;  // 특수 효과 설명
 }
 
 // 야구 결과 타입
@@ -104,10 +130,10 @@ export interface GameState {
   selectedPlayer: PlayerCard | null; // 선택된 선수
   isFirstAtBat: boolean;         // 이닝 첫 타석 여부
   
-  // 트럼프 카드 덱 상태
-  pokerDeck: PokerCard[];        // 트럼프덱 (남은 카드)
-  pokerHand: PokerCard[];        // 트럼프 손패 (8장)
-  selectedPokerCards: PokerCard[]; // 선택한(버릴) 트럼프 카드
+  // 액션 카드 덱 상태
+  actionDeck: ActionCard[];        // 액션덱 (남은 카드)
+  actionHand: ActionCard[];        // 액션 손패 (8장)
+  selectedActionCards: ActionCard[]; // 선택한 액션 카드
   
   // 현재 결과
   currentResult: PlayResult | null;

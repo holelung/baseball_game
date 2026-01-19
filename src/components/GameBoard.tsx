@@ -3,7 +3,7 @@ import { useGameStore } from '../store/gameStore';
 import { Diamond } from './Diamond';
 import { ScoreBoard } from './ScoreBoard';
 import { Hand } from './Hand';
-import { PokerHand } from './PokerCard';
+import { ActionHand } from './ActionCard';
 import { HandDisplay, AvailableHandsGuide } from './HandDisplay';
 import { PlayerCardComponent } from './Card';
 
@@ -20,15 +20,15 @@ export function GameBoard() {
     playerHand,
     playerDeck,
     selectedPlayer,
-    pokerHand,
-    pokerDeck,
-    selectedPokerCards,
+    actionHand,
+    actionDeck,
+    selectedActionCards,
     currentResult,
     phase,
     discardsRemaining,
     initGame,
     selectPlayer,
-    togglePokerCard,
+    toggleActionCard,
     discardAndDraw,
     executeSelectedPlay,
     nextTurn,
@@ -79,7 +79,7 @@ export function GameBoard() {
           >
             선수덱: {playerDeck.length}장 (클릭하여 확인)
           </button>
-          <div>트럼프덱: {pokerDeck.length}장</div>
+          <div>액션덱: {actionDeck.length}장</div>
         </div>
       </div>
 
@@ -98,54 +98,54 @@ export function GameBoard() {
           <div className="space-y-4">
             <div className="text-center">
               <h3 className="text-white text-lg font-semibold mb-1">
-                트럼프 카드 (8장)
+                액션 카드 (8장)
               </h3>
               <p className="text-gray-400 text-sm">
                 족보에 사용할 카드를 선택하세요 (1~5장)
               </p>
             </div>
-            
-            {/* 트럼프 카드 핸드 */}
-            <PokerHand 
-              cards={pokerHand}
-              onCardClick={togglePokerCard}
+
+            {/* 액션 카드 핸드 */}
+            <ActionHand
+              cards={actionHand}
+              onCardClick={toggleActionCard}
             />
-            
+
             {/* 선택된 카드 수 표시 */}
             <div className="text-center">
               <span className={`text-lg font-bold ${
-                selectedPokerCards.length > 0 ? 'text-yellow-400' : 'text-gray-500'
+                selectedActionCards.length > 0 ? 'text-yellow-400' : 'text-gray-500'
               }`}>
-                선택: {selectedPokerCards.length}장
+                선택: {selectedActionCards.length}장
               </span>
             </div>
-            
+
             {/* 액션 버튼들 */}
             <div className="flex flex-wrap justify-center gap-3 mt-4">
               <button
                 onClick={executeSelectedPlay}
-                disabled={selectedPokerCards.length === 0}
+                disabled={selectedActionCards.length === 0}
                 className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
-                  selectedPokerCards.length > 0
+                  selectedActionCards.length > 0
                     ? 'bg-green-600 hover:bg-green-700 text-white'
                     : 'bg-gray-600 text-gray-400 cursor-not-allowed'
                 }`}
               >
-                플레이! ({selectedPokerCards.length}장)
+                플레이! ({selectedActionCards.length}장)
               </button>
-              
+
               <button
                 onClick={discardAndDraw}
-                disabled={discardsRemaining <= 0 || selectedPokerCards.length === 0 || selectedPokerCards.length > 5}
+                disabled={discardsRemaining <= 0 || selectedActionCards.length === 0 || selectedActionCards.length > 5}
                 className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
-                  discardsRemaining > 0 && selectedPokerCards.length > 0 && selectedPokerCards.length <= 5
+                  discardsRemaining > 0 && selectedActionCards.length > 0 && selectedActionCards.length <= 5
                     ? 'bg-orange-600 hover:bg-orange-700 text-white'
                     : 'bg-gray-600 text-gray-400 cursor-not-allowed'
                 }`}
               >
-                버리고 새로 뽑기 ({selectedPokerCards.length}장) - {discardsRemaining}회
+                버리고 새로 뽑기 ({selectedActionCards.length}장) - {discardsRemaining}회
               </button>
-              
+
               <button
                 onClick={() => setShowGuide(!showGuide)}
                 className="px-4 py-3 bg-gray-600 hover:bg-gray-500 text-white rounded-lg font-semibold transition-colors"
@@ -153,9 +153,9 @@ export function GameBoard() {
                 {showGuide ? '족보 닫기' : '족보 보기'}
               </button>
             </div>
-            
+
             {/* 족보 가이드 (토글) */}
-            {showGuide && <AvailableHandsGuide selectedCount={selectedPokerCards.length} />}
+            {showGuide && <AvailableHandsGuide selectedCount={selectedActionCards.length} />}
           </div>
         )}
 
@@ -335,9 +335,9 @@ export function GameBoard() {
             outs,
             currentInning,
             playerDeckSize: playerDeck.length,
-            pokerDeckSize: pokerDeck.length,
-            pokerHandSize: pokerHand.length,
-            selectedCardsCount: selectedPokerCards.length,
+            actionDeckSize: actionDeck.length,
+            actionHandSize: actionHand.length,
+            selectedCardsCount: selectedActionCards.length,
             batterAvg: selectedPlayer?.battingAverage,
             runnersOnBase: {
               first: bases.first?.name,

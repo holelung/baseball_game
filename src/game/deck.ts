@@ -1,4 +1,4 @@
-import { PlayerCard, PokerCard, Suit, Rank } from './types';
+import { PlayerCard, ActionCard, StatType, ActionRank } from './types';
 
 /**
  * Fisher-Yates 셔플 알고리즘
@@ -46,38 +46,38 @@ export function returnToDeck(deck: PlayerCard[], players: PlayerCard[]): PlayerC
   return [...players, ...deck];
 }
 
-// ========== 트럼프 카드 덱 관련 ==========
+// ========== 액션 카드 덱 관련 ==========
 
-const SUITS: Suit[] = ['spade', 'heart', 'diamond', 'club'];
-const RANKS: Rank[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
+const STATS: StatType[] = ['power', 'contact', 'speed', 'eye'];
+const RANKS: ActionRank[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
 
 /**
- * 52장의 트럼프 덱 생성
+ * 52장의 액션 카드 덱 생성
  */
-export function createPokerDeck(): PokerCard[] {
-  const deck: PokerCard[] = [];
+export function createActionDeck(): ActionCard[] {
+  const deck: ActionCard[] = [];
   let id = 0;
-  
-  for (const suit of SUITS) {
+
+  for (const stat of STATS) {
     for (const rank of RANKS) {
       deck.push({
-        id: `poker_${id++}`,
-        suit,
+        id: `action_${id++}`,
+        stat,
         rank,
         selected: false,
       });
     }
   }
-  
+
   return deck;
 }
 
 /**
- * 트럼프 덱에서 n장 드로우
+ * 액션 카드 덱에서 n장 드로우
  */
-export function drawPokerCards(deck: PokerCard[], count: number): {
-  drawn: PokerCard[];
-  remaining: PokerCard[];
+export function drawActionCards(deck: ActionCard[], count: number): {
+  drawn: ActionCard[];
+  remaining: ActionCard[];
 } {
   const drawn = deck.slice(0, count).map(card => ({ ...card, selected: false }));
   const remaining = deck.slice(count);
@@ -85,27 +85,27 @@ export function drawPokerCards(deck: PokerCard[], count: number): {
 }
 
 /**
- * 카드 선택 토글
+ * 액션 카드 선택 토글
  */
-export function toggleCardSelection(cards: PokerCard[], cardId: string): PokerCard[] {
-  return cards.map(card => 
-    card.id === cardId 
+export function toggleActionCardSelection(cards: ActionCard[], cardId: string): ActionCard[] {
+  return cards.map(card =>
+    card.id === cardId
       ? { ...card, selected: !card.selected }
       : card
   );
 }
 
 /**
- * 선택된 카드들 가져오기
+ * 선택된 액션 카드들 가져오기
  */
-export function getSelectedCards(cards: PokerCard[]): PokerCard[] {
+export function getSelectedActionCards(cards: ActionCard[]): ActionCard[] {
   return cards.filter(card => card.selected);
 }
 
 /**
  * 카드 랭크를 표시 문자로 변환
  */
-export function getRankDisplay(rank: Rank): string {
+export function getRankDisplay(rank: ActionRank): string {
   switch (rank) {
     case 1: return 'A';
     case 11: return 'J';
@@ -116,20 +116,37 @@ export function getRankDisplay(rank: Rank): string {
 }
 
 /**
- * 무늬를 이모지로 변환
+ * 속성을 이모지로 변환
  */
-export function getSuitEmoji(suit: Suit): string {
-  switch (suit) {
-    case 'spade': return '♠';
-    case 'heart': return '♥';
-    case 'diamond': return '♦';
-    case 'club': return '♣';
+export function getStatEmoji(stat: StatType): string {
+  switch (stat) {
+    case 'power': return '💥';
+    case 'contact': return '🎯';
+    case 'speed': return '⚡';
+    case 'eye': return '👁️';
   }
 }
 
 /**
- * 무늬가 빨간색인지 확인
+ * 속성별 색상 클래스 반환
  */
-export function isRedSuit(suit: Suit): boolean {
-  return suit === 'heart' || suit === 'diamond';
+export function getStatColorClass(stat: StatType): string {
+  switch (stat) {
+    case 'power': return 'text-red-500';
+    case 'contact': return 'text-blue-500';
+    case 'speed': return 'text-green-500';
+    case 'eye': return 'text-yellow-500';
+  }
+}
+
+/**
+ * 속성별 배경 그라데이션 클래스 반환
+ */
+export function getStatBgClass(stat: StatType): string {
+  switch (stat) {
+    case 'power': return 'from-red-600 to-red-800';
+    case 'contact': return 'from-blue-600 to-blue-800';
+    case 'speed': return 'from-green-600 to-green-800';
+    case 'eye': return 'from-yellow-600 to-amber-700';
+  }
 }
