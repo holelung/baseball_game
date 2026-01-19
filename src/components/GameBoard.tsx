@@ -174,7 +174,7 @@ export function GameBoard() {
                 ? `${selectedPlayer?.name} - 아웃!`
                 : currentResult.baseballResult === 'homerun'
                   ? `${selectedPlayer?.name}의 홈런!`
-                  : `${selectedPlayer?.name}의 ${currentResult.handResult.name}!`
+                  : `${selectedPlayer?.name}의 ${currentResult.modeResult.name}!`
               }
             </div>
 
@@ -184,13 +184,14 @@ export function GameBoard() {
               </div>
             )}
 
-            <HandDisplay handResult={currentResult.handResult} />
+            <HandDisplay modeResult={currentResult.modeResult} batter={selectedPlayer} />
 
             {/* 점수 계산 분해 */}
             <ScoreBreakdown
               breakdown={currentResult.scoreBreakdown}
-              handResult={currentResult.handResult}
+              modeResult={currentResult.modeResult}
               isOut={currentResult.baseballResult === 'out'}
+              hasSynergy={currentResult.hasSynergy}
             />
 
             {currentResult.runsScored > 0 && (

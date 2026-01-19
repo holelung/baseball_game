@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { GameState, GamePhase, ActionCard, BaseState } from '../game/types';
 import { shuffle, drawPlayers, addToBottom, createActionDeck, drawActionCards, toggleActionCardSelection, getSelectedActionCards } from '../game/deck';
 import { emptyBases, executePlay, advanceRunners } from '../game/scoring';
-import { evaluateActionHand } from '../game/actionPoker';
+import { evaluateActionMode } from '../game/actionMode';
 import { starterPlayers } from '../data/starterPlayers';
 
 interface GameActions {
@@ -143,11 +143,11 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     if (!state.selectedPlayer) return;
     if (state.selectedActionCards.length === 0) return; // 카드 선택 필수
 
-    // 선택한 카드로 족보 판정
-    const handResult = evaluateActionHand(state.selectedActionCards);
+    // 선택한 카드로 모드 판정
+    const modeResult = evaluateActionMode(state.selectedActionCards);
 
     // 확률 기반 플레이 실행
-    const playResult = executePlay(handResult, state.selectedPlayer, state.bases);
+    const playResult = executePlay(modeResult, state.selectedPlayer, state.bases);
 
     const isOut = playResult.baseballResult === 'out';
     let newOuts = state.outs;

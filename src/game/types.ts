@@ -30,52 +30,41 @@ export interface ActionCard {
   selected: boolean; // 플레이어가 선택했는지
 }
 
-// 28종 족보 타입
-export type ActionHandRank =
-  // 기본 포커 족보 (Lv.1-9)
-  | 'high_card'             // 하이카드
-  | 'one_pair'              // 원페어
-  | 'two_pair'              // 투페어
-  | 'three_of_kind'         // 트리플
-  | 'straight'              // 스트레이트
-  | 'flush'                 // 플러시
-  | 'full_house'            // 풀하우스
-  | 'four_of_kind'          // 포카드
-  | 'straight_flush'        // 스트레이트 플러시
-  // 속성별 원페어 (Lv.10-13)
-  | 'power_pair'            // 파워 페어
-  | 'contact_pair'          // 컨택 페어
-  | 'speed_pair'            // 스피드 페어
-  | 'eye_pair'              // 선구안 페어
-  // 속성별 트리플 (Lv.14-17)
-  | 'power_triple'          // 파워 트리플
-  | 'contact_triple'        // 컨택 트리플 (안타 확정!)
-  | 'speed_triple'          // 스피드 트리플
-  | 'eye_triple'            // 선구안 트리플
-  // 이중 속성 투페어 (Lv.18-23)
-  | 'power_contact'         // 파워컨택
-  | 'power_speed'           // 파워스피드
-  | 'power_eye'             // 파워아이
-  | 'contact_speed'         // 컨택스피드
-  | 'contact_eye'           // 컨택아이
-  | 'speed_eye'             // 스피드아이
-  // 상위 야구 전용 족보 (Lv.24-28)
-  | 'batting_eye'           // 배팅 아이 (선구안 4장+)
-  | 'power_surge'           // 파워 서지 (파워 3장+ & 합계 30+)
-  | 'speed_star'            // 스피드 스타 (스피드로만 스트레이트)
-  | 'contact_master'        // 컨택 마스터 (컨택으로만 풀하우스)
-  | 'perfect_swing';        // 퍼펙트 스윙 (4속성 각 1장+ & 페어)
+// ========== 임계값 기반 액션 모드 시스템 (6종) ==========
 
-// 족보 결과
-export interface HandResult {
-  rank: ActionHandRank;
+// 액션 모드 타입
+export type ActionMode =
+  | 'power_swing'      // 파워 스윙: 💪 3장 이상
+  | 'contact_hit'      // 정확한 타격: 🎯 3장 이상
+  | 'speed_play'       // 스피드 플레이: 👟 3장 이상
+  | 'eye_mode'         // 선구안 모드: 👀 3장 이상
+  | 'balanced'         // 밸런스: 2속성 각 2장 이상
+  | 'normal';          // 일반: 조건 미충족
+
+// 속성별 카드 집계
+export interface StatCount {
+  power: number;
+  contact: number;
+  speed: number;
+  eye: number;
+}
+
+// 모드 결과
+export interface ModeResult {
+  mode: ActionMode;
   name: string;
-  cards: ActionCard[];     // 족보를 구성하는 카드들
-  multiplier: number;      // 점수 배율
-  hitBonus: number;        // 안타 확률 보너스 (0.0 ~ 1.0+)
-  baseChips: number;       // 기본 칩
+  description: string;
+  cards: ActionCard[];     // 선택한 카드들
+  cardChips: number;       // 카드 숫자 합계
+  statCount: StatCount;    // 속성별 카드 수
+  // 효과
+  hitBonus: number;        // 안타 확률 보너스
+  extraBaseChance: number; // 장타 확률 (0.0 ~ 1.0)
   specialEffect?: string;  // 특수 효과 설명
 }
+
+// 기존 HandResult를 ModeResult로 대체하는 타입 별칭 (호환성)
+export type HandResult = ModeResult;
 
 // 야구 결과 타입
 export type BaseballResult = 
@@ -85,31 +74,35 @@ export type BaseballResult =
   | 'triple'        // 3루타
   | 'homerun';      // 홈런
 
-// 점수 계산 분해
+// 점수 계산 분해 (단순화)
 export interface ScoreBreakdown {
-  baseChips: number;       // 기본 칩 (족보에서)
-  cardChips: number;       // 카드 칩 합계 (선택한 카드 숫자 합)
-  totalChips: number;      // 총 칩 (기본 + 카드)
-  multiplier: number;      // 배율
-  baseScore: number;       // 기본 점수 (chips × mult)
+  cardChips: number;       // 카드 숫자 합계
+  modeBonus: number;       // 모드 보너스
+  synergyBonus: number;    // 선수-모드 시너지 보너스
   runBonus: number;        // 득점 보너스 (득점 × 20)
-  overflowBonus: number;   // 확률 초과 보너스
-  specialMultiplier: number; // 특수 효과 배율 (파워아이 홈런 등)
   finalScore: number;      // 최종 점수
 }
 
-// 족보에 따른 야구 결과
+// 모드에 따른 야구 결과
 export interface PlayResult {
   baseballResult: BaseballResult;
-  handResult: HandResult;
+  modeResult: ModeResult;
   runsScored: number;
   pointsEarned: number;   // 최종 획득 포인트
   description: string;
   // 확률 시스템
   hitProbability: number; // 최종 안타 확률
   wasLucky: boolean;      // 확률 판정 성공 여부
+  // 시너지 정보
+  hasSynergy: boolean;    // 선수-모드 시너지 발동 여부
+  synergyDescription?: string;
   // 점수 분해
   scoreBreakdown: ScoreBreakdown;
+}
+
+// 기존 호환성을 위한 별칭
+export interface PlayResultLegacy extends PlayResult {
+  handResult: ModeResult; // 기존 코드 호환
 }
 
 // 루 상태 (null이면 주자 없음)
