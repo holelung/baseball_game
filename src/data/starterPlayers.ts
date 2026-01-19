@@ -1,7 +1,7 @@
 import { PlayerCard } from '../game/types';
 
 /**
- * 스타터 선수덱 (10장)
+ * 스타터 선수덱 (9장) - 야구 라인업과 동일
  * 각 선수는 고유 능력을 가짐
  */
 export const starterPlayers: PlayerCard[] = [
@@ -78,7 +78,7 @@ export const starterPlayers: PlayerCard[] = [
   {
     id: 'p8',
     name: '임태양',
-    tags: [],
+    tags: ['speed'],
     battingAverage: 0.240,
     power: 3,
     speed: 6,
@@ -87,16 +87,6 @@ export const starterPlayers: PlayerCard[] = [
   },
   {
     id: 'p9',
-    name: '송민기',
-    tags: ['speed'],
-    battingAverage: 0.230,
-    power: 2,
-    speed: 7,
-    ability: 'speedster',  // 쾌속: 1루타 시 50% 확률로 2루타
-    revealed: false,
-  },
-  {
-    id: 'p10',
     name: '한승우',
     tags: ['contact', 'speed'],
     battingAverage: 0.275,
