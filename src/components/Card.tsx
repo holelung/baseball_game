@@ -1,10 +1,18 @@
-import { PlayerCard } from '../game/types';
+import { PlayerCard, AbilityType } from '../game/types';
+import { ABILITY_INFO } from '../game/playerAbility';
 
 interface PlayerCardProps {
   player: PlayerCard;
   onClick?: () => void;
   disabled?: boolean;
   small?: boolean;
+}
+
+// 능력 아이콘과 이름 가져오기
+function getAbilityDisplay(ability: AbilityType | undefined): { icon: string; name: string } | null {
+  if (!ability) return null;
+  const info = ABILITY_INFO[ability];
+  return { icon: info.icon, name: info.name };
 }
 
 export function PlayerCardComponent({ player, onClick, disabled, small }: PlayerCardProps) {
@@ -15,9 +23,11 @@ export function PlayerCardComponent({ player, onClick, disabled, small }: Player
     eye: 'bg-purple-500',
   };
 
+  const abilityDisplay = getAbilityDisplay(player.ability);
+
   const sizeClasses = small
     ? 'w-16 h-20 text-xs'
-    : 'w-28 h-36';
+    : 'w-28 h-40';
 
   return (
     <div
@@ -47,6 +57,13 @@ export function PlayerCardComponent({ player, onClick, disabled, small }: Player
               </span>
             ))}
           </div>
+          {/* 능력 표시 */}
+          {abilityDisplay && (
+            <div className="bg-purple-600 text-white text-[9px] px-1.5 py-0.5 rounded flex items-center gap-0.5">
+              <span>{abilityDisplay.icon}</span>
+              <span>{abilityDisplay.name}</span>
+            </div>
+          )}
           <div className="text-[10px] text-gray-600 space-y-0.5">
             <div>타율: {player.battingAverage.toFixed(3)}</div>
             <div>파워: {'⭐'.repeat(Math.min(player.power, 5))}</div>

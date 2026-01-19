@@ -1,5 +1,6 @@
 import { PlayerCard, BaseState, ModeResult, BaseballResult, PlayResult, ScoreBreakdown } from './types';
 import { MODE_INFO, checkSynergy } from './actionMode';
+import { checkAbilityBeforeHit, checkAbilityAfterHit, calculateAbilityBonus, GameContext, ABILITY_INFO } from './playerAbility';
 
 /**
  * 빈 베이스 상태
@@ -130,39 +131,67 @@ function tryUpgradeResult(
 export function executePlay(
   modeResult: ModeResult,
   batter: PlayerCard,
-  bases: BaseState
+  bases: BaseState,
+  outs: number = 0,
+  isFirstAtBat: boolean = false
 ): PlayResult {
   const modeInfo = MODE_INFO[modeResult.mode];
+
+  // 게임 컨텍스트
+  const context: GameContext = {
+    outs,
+    isFirstAtBat,
+    bases,
+  };
 
   // 시너지 체크
   const synergy = checkSynergy(batter.tags, modeResult.mode);
 
-  // 안타 확률 = 선수 타율 + 모드 보너스 + 시너지 보너스
+  // 능력 체크 (타격 전)
+  const isNormalMode = modeResult.mode === 'normal';
+  const abilityBeforeHit = checkAbilityBeforeHit(batter.ability, context, isNormalMode);
+
+  // 안타 확률 = 선수 타율 + 모드 보너스 + 시너지 보너스 + 능력 보너스
   let hitProbability = batter.battingAverage + modeResult.hitBonus;
   if (synergy.hasSynergy) {
     hitProbability += synergy.bonus;
   }
+  hitProbability += abilityBeforeHit.hitBonusAdd;
 
   // 확률 판정
   const roll = Math.random();
-  const isHit = hitProbability >= 1.0 || roll < hitProbability;
+  let isHit = hitProbability >= 1.0 || roll < hitProbability;
   const wasLucky = hitProbability < 1.0 && isHit;
 
   // 결과 결정
   let baseballResult: BaseballResult;
+  let abilityTriggered = abilityBeforeHit.triggered;
+  let abilityDescription = abilityBeforeHit.description;
+
   if (!isHit) {
-    baseballResult = 'out';
+    // 아웃 판정 - contact_master 능력 체크
+    if (abilityBeforeHit.canSaveFromOut) {
+      const saveCheck = checkAbilityAfterHit(batter.ability, context, 'out', 0);
+      if (saveCheck.triggered) {
+        // 내야안타로 구제
+        isHit = true;
+        baseballResult = 'single';
+        abilityTriggered = true;
+        abilityDescription = saveCheck.description;
+      } else {
+        baseballResult = 'out';
+      }
+    } else {
+      baseballResult = 'out';
+    }
   } else {
     // 기본 결과
     baseballResult = 'single';
 
-    // 모드에 따른 기본 결과
-    if (modeResult.mode === 'power_swing') {
-      baseballResult = 'single'; // 기본은 1루타, 장타 확률로 업그레이드
-    }
-
     // 장타 확률로 업그레이드 시도
-    const effectiveExtraBaseChance = modeResult.extraBaseChance + (synergy.hasSynergy ? 0.1 : 0);
+    let effectiveExtraBaseChance = modeResult.extraBaseChance + (synergy.hasSynergy ? 0.1 : 0);
+    effectiveExtraBaseChance += abilityBeforeHit.extraBaseChanceAdd;
+
     baseballResult = tryUpgradeResult(
       baseballResult,
       effectiveExtraBaseChance,
@@ -175,32 +204,54 @@ export function executePlay(
   if (modeResult.mode === 'speed_play' && baseballResult !== 'out' && baseballResult !== 'homerun') {
     if (synergy.hasSynergy || Math.random() < 0.5) {
       advanceCount = Math.min(advanceCount + 1, 3);
-      // 결과 텍스트 업데이트
       if (advanceCount === 2) baseballResult = 'double';
       if (advanceCount === 3) baseballResult = 'triple';
     }
   }
 
+  // 능력 체크 (타격 후) - leadoff, speedster
+  if (isHit && baseballResult !== 'out') {
+    const abilityAfterHit = checkAbilityAfterHit(batter.ability, context, baseballResult, 0);
+    if (abilityAfterHit.extraAdvance && baseballResult !== 'homerun') {
+      advanceCount = Math.min(advanceCount + 1, 3);
+      if (advanceCount === 2) baseballResult = 'double';
+      if (advanceCount === 3) baseballResult = 'triple';
+      abilityTriggered = true;
+      abilityDescription = abilityAfterHit.description;
+    }
+  }
+
   // 진루 처리
   let runsScored = 0;
-  if (!isHit) {
-    // 아웃
-  } else {
+  if (baseballResult !== 'out') {
     const advanceResult = advanceRunners(bases, batter, advanceCount);
     runsScored = advanceResult.runsScored;
   }
 
-  // 포인트 계산 (모드 보너스 + 시너지 + 득점)
+  // 타점 능력 체크 (run_producer)
+  let pointsMultiplier = 1;
+  if (runsScored > 0) {
+    const runProducerCheck = checkAbilityAfterHit(batter.ability, context, baseballResult, runsScored);
+    if (runProducerCheck.triggered && runProducerCheck.pointsMultiplier > 1) {
+      pointsMultiplier = runProducerCheck.pointsMultiplier;
+      abilityTriggered = true;
+      abilityDescription = runProducerCheck.description;
+    }
+  }
+
+  // 포인트 계산
   const modeBonus = modeInfo.bonusPoints;
   const synergyBonus = synergy.hasSynergy ? 20 : 0;
-  const runBonus = runsScored * 20;
+  const abilityBonus = calculateAbilityBonus(batter.ability, abilityTriggered);
+  const runBonus = Math.floor(runsScored * 20 * pointsMultiplier);
 
-  const basePoints = modeBonus + synergyBonus;
-  const pointsEarned = isHit ? basePoints + runBonus : 0;
+  const basePoints = modeBonus + synergyBonus + abilityBonus;
+  const pointsEarned = baseballResult !== 'out' ? basePoints + runBonus : 0;
 
   const scoreBreakdown: ScoreBreakdown = {
     modeBonus,
     synergyBonus,
+    abilityBonus,
     runBonus,
     finalScore: pointsEarned,
   };
@@ -209,12 +260,13 @@ export function executePlay(
   const probPercent = Math.min(Math.round(hitProbability * 100), 100);
   let description = '';
 
-  if (!isHit) {
+  if (baseballResult === 'out') {
     description = `${batter.name} - ${modeResult.name} (${probPercent}%) 아웃...`;
   } else {
     const luckyText = wasLucky ? ' (Lucky!)' : '';
     const synergyText = synergy.hasSynergy ? ` [${synergy.description}]` : '';
-    description = `${batter.name}의 ${modeResult.name}!${luckyText} ${getResultName(baseballResult)}!${synergyText}`;
+    const abilityText = abilityTriggered ? ` [${ABILITY_INFO[batter.ability!].name}]` : '';
+    description = `${batter.name}의 ${modeResult.name}!${luckyText} ${getResultName(baseballResult)}!${synergyText}${abilityText}`;
     if (runsScored > 0) {
       description += ` ${runsScored}점 득점!`;
     }
@@ -231,6 +283,8 @@ export function executePlay(
     wasLucky,
     hasSynergy: synergy.hasSynergy,
     synergyDescription: synergy.hasSynergy ? synergy.description : undefined,
+    abilityTriggered,
+    abilityDescription: abilityTriggered ? abilityDescription : undefined,
     scoreBreakdown,
   };
 }

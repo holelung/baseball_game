@@ -1,6 +1,28 @@
 // 선수 카드 태그
 export type PlayerTag = 'speed' | 'power' | 'contact' | 'eye';
 
+// ========== 선수 고유 능력 시스템 ==========
+
+// 능력 타입
+export type AbilityType =
+  | 'clutch'        // 결정력: 2사 상황에서 안타 확률 +15%
+  | 'leadoff'       // 선두타자: 이닝 첫 타석에서 출루 시 추가 진루
+  | 'cleanup'       // 클린업: 주자가 있을 때 장타 확률 +15%
+  | 'speedster'     // 쾌속: 1루타 시 50% 확률로 2루타로 업그레이드
+  | 'run_producer'  // 타점 제조기: 타점 획득 시 포인트 1.5배
+  | 'contact_master' // 안타 장인: 아웃 판정 시 20% 확률로 내야안타
+  | 'power_hitter'  // 장타자: 안타 시 장타 확률 +20%
+  | 'patient'       // 인내심: 일반 모드에서도 안타 확률 +10%
+  | 'hot_streak';   // 연속 안타: 직전 타석 안타 시 이번 타석 +15%
+
+// 능력 정보
+export interface AbilityInfo {
+  type: AbilityType;
+  name: string;
+  description: string;
+  icon: string;
+}
+
 // 선수 카드
 export interface PlayerCard {
   id: string;
@@ -10,6 +32,8 @@ export interface PlayerCard {
   battingAverage: number; // 타율 (0-1)
   power: number;          // 장타력 (1-10)
   speed: number;          // 주루 속도 (1-10)
+  // 고유 능력
+  ability?: AbilityType;
   // 큐 순서 공개 여부 (한번 사용하면 순서를 알게 됨)
   revealed: boolean;
 }
@@ -73,6 +97,7 @@ export type BaseballResult =
 export interface ScoreBreakdown {
   modeBonus: number;       // 모드 보너스
   synergyBonus: number;    // 선수-모드 시너지 보너스
+  abilityBonus: number;    // 능력 보너스
   runBonus: number;        // 득점 보너스 (득점 × 20)
   finalScore: number;      // 최종 점수
 }
@@ -90,6 +115,9 @@ export interface PlayResult {
   // 시너지 정보
   hasSynergy: boolean;    // 선수-모드 시너지 발동 여부
   synergyDescription?: string;
+  // 능력 발동 정보
+  abilityTriggered: boolean;
+  abilityDescription?: string;
   // 점수 분해
   scoreBreakdown: ScoreBreakdown;
 }

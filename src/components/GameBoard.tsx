@@ -192,6 +192,8 @@ export function GameBoard() {
               modeResult={currentResult.modeResult}
               isOut={currentResult.baseballResult === 'out'}
               hasSynergy={currentResult.hasSynergy}
+              abilityTriggered={currentResult.abilityTriggered}
+              abilityDescription={currentResult.abilityDescription}
             />
 
             {currentResult.runsScored > 0 && (

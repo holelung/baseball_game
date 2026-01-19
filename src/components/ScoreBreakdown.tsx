@@ -5,9 +5,11 @@ interface ScoreBreakdownProps {
   modeResult: ModeResult;
   isOut: boolean;
   hasSynergy?: boolean;
+  abilityTriggered?: boolean;
+  abilityDescription?: string;
 }
 
-export function ScoreBreakdown({ breakdown, modeResult, isOut, hasSynergy }: ScoreBreakdownProps) {
+export function ScoreBreakdown({ breakdown, modeResult, isOut, hasSynergy, abilityTriggered, abilityDescription }: ScoreBreakdownProps) {
   if (isOut) {
     return (
       <div className="bg-gray-800/80 rounded-xl p-4 border border-red-500/30">
@@ -25,6 +27,13 @@ export function ScoreBreakdown({ breakdown, modeResult, isOut, hasSynergy }: Sco
         점수 계산
       </div>
 
+      {/* 능력 발동 메시지 */}
+      {abilityTriggered && abilityDescription && (
+        <div className="bg-purple-600/30 border border-purple-500 rounded-lg p-2 text-center">
+          <span className="text-purple-300 text-sm font-semibold">{abilityDescription}</span>
+        </div>
+      )}
+
       {/* 점수 분해 */}
       <div className="bg-gray-900/50 rounded-lg p-3 space-y-2">
         {/* 모드 보너스 */}
@@ -38,6 +47,14 @@ export function ScoreBreakdown({ breakdown, modeResult, isOut, hasSynergy }: Sco
           <div className="flex items-center justify-between text-sm">
             <span className="text-yellow-400">★ 시너지 보너스</span>
             <span className="text-yellow-400 font-bold">+{breakdown.synergyBonus}</span>
+          </div>
+        )}
+
+        {/* 능력 보너스 */}
+        {abilityTriggered && breakdown.abilityBonus > 0 && (
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-pink-400">⚡ 능력 보너스</span>
+            <span className="text-pink-400 font-bold">+{breakdown.abilityBonus}</span>
           </div>
         )}
 
@@ -62,6 +79,7 @@ export function ScoreBreakdown({ breakdown, modeResult, isOut, hasSynergy }: Sco
       <div className="text-center text-gray-500 text-xs">
         {breakdown.modeBonus}
         {hasSynergy && breakdown.synergyBonus > 0 && ` + ${breakdown.synergyBonus}`}
+        {abilityTriggered && breakdown.abilityBonus > 0 && ` + ${breakdown.abilityBonus}`}
         {breakdown.runBonus > 0 && ` + ${breakdown.runBonus}`}
         {' '}= {breakdown.finalScore}P
       </div>

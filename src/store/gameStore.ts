@@ -146,8 +146,8 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     // 선택한 카드로 모드 판정
     const modeResult = evaluateActionMode(state.selectedActionCards);
 
-    // 확률 기반 플레이 실행
-    const playResult = executePlay(modeResult, state.selectedPlayer, state.bases);
+    // 확률 기반 플레이 실행 (outs와 isFirstAtBat 전달)
+    const playResult = executePlay(modeResult, state.selectedPlayer, state.bases, state.outs, state.isFirstAtBat);
 
     const isOut = playResult.baseballResult === 'out';
     let newOuts = state.outs;

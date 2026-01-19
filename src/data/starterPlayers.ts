@@ -2,7 +2,7 @@ import { PlayerCard } from '../game/types';
 
 /**
  * 스타터 선수덱 (10장)
- * 기본적으로 평범한 능력치의 선수들
+ * 각 선수는 고유 능력을 가짐
  */
 export const starterPlayers: PlayerCard[] = [
   {
@@ -12,6 +12,7 @@ export const starterPlayers: PlayerCard[] = [
     battingAverage: 0.280,
     power: 3,
     speed: 8,
+    ability: 'speedster',  // 쾌속: 1루타 시 50% 확률로 2루타
     revealed: false,
   },
   {
@@ -21,6 +22,7 @@ export const starterPlayers: PlayerCard[] = [
     battingAverage: 0.290,
     power: 4,
     speed: 6,
+    ability: 'contact_master',  // 안타 장인: 아웃 시 20% 확률로 내야안타
     revealed: false,
   },
   {
@@ -30,6 +32,7 @@ export const starterPlayers: PlayerCard[] = [
     battingAverage: 0.300,
     power: 6,
     speed: 5,
+    ability: 'cleanup',  // 클린업: 주자 있을 때 장타 확률 +15%
     revealed: false,
   },
   {
@@ -39,6 +42,7 @@ export const starterPlayers: PlayerCard[] = [
     battingAverage: 0.270,
     power: 9,
     speed: 3,
+    ability: 'power_hitter',  // 장타자: 안타 시 장타 확률 +20%
     revealed: false,
   },
   {
@@ -48,6 +52,7 @@ export const starterPlayers: PlayerCard[] = [
     battingAverage: 0.260,
     power: 7,
     speed: 4,
+    ability: 'clutch',  // 결정력: 2사 상황에서 안타 확률 +15%
     revealed: false,
   },
   {
@@ -57,6 +62,7 @@ export const starterPlayers: PlayerCard[] = [
     battingAverage: 0.265,
     power: 5,
     speed: 5,
+    ability: 'hot_streak',  // 연속 안타: 직전 안타 시 이번 타석 +15%
     revealed: false,
   },
   {
@@ -66,6 +72,7 @@ export const starterPlayers: PlayerCard[] = [
     battingAverage: 0.250,
     power: 4,
     speed: 5,
+    ability: 'patient',  // 인내심: 일반 모드에서도 안타 확률 +10%
     revealed: false,
   },
   {
@@ -75,6 +82,7 @@ export const starterPlayers: PlayerCard[] = [
     battingAverage: 0.240,
     power: 3,
     speed: 6,
+    ability: 'leadoff',  // 선두타자: 이닝 첫 타석 출루 시 추가 진루
     revealed: false,
   },
   {
@@ -84,6 +92,7 @@ export const starterPlayers: PlayerCard[] = [
     battingAverage: 0.230,
     power: 2,
     speed: 7,
+    ability: 'speedster',  // 쾌속: 1루타 시 50% 확률로 2루타
     revealed: false,
   },
   {
@@ -93,6 +102,7 @@ export const starterPlayers: PlayerCard[] = [
     battingAverage: 0.275,
     power: 3,
     speed: 7,
+    ability: 'run_producer',  // 타점 제조기: 타점 시 포인트 1.5배
     revealed: false,
   },
 ];
