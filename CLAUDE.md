@@ -51,4 +51,21 @@ Zustand 단일 스토어. 게임 상태와 액션을 모두 포함.
 - `src/game/` 내 함수는 순수 함수로 유지 (side-effect 없음)
 - 상태 변경은 반드시 gameStore 액션을 통해 수행
 - 선수 카드의 `revealed` 속성으로 덱 순서 공개 여부 추적
-- 기능 변경 이후 `CHANGELOG.md`기록 및 `git commit` 진행
+
+## 커밋 및 문서화 워크플로우
+
+**코드 작업 완료 후 반드시 백그라운드 에이전트로 커밋/문서화 위임:**
+
+```
+Task(
+  subagent_type="Bash",
+  run_in_background=true,
+  prompt="
+    1. git status와 git diff로 변경사항 분석
+    2. docs/CHANGELOG.md에 변경 내용 추가 (Keep a Changelog 형식)
+    3. 적절한 커밋 메시지로 git commit (Co-Authored-By 포함)
+  "
+)
+```
+
+**이유**: 커밋/문서 작업이 메인 컨텍스트 윈도우를 낭비하지 않도록 분리
