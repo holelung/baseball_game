@@ -158,7 +158,8 @@ export interface Pitcher {
 
 // 게임 상태
 export interface GameState {
-  // 아웃 카운트
+  // 이닝 및 아웃
+  currentInning: number;      // 현재 이닝 (3아웃마다 +1)
   outs: number;
   score: number;              // 야구 점수 (득점)
   totalPoints: number;        // 총 포인트

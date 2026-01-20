@@ -219,34 +219,36 @@ export interface PitcherWithDebuff extends BasePitcher {
   icon?: string;
 }
 
-// ========== 선발 투수 (디버프 없음, 낮은 목표 포인트) ==========
+// ========== 선발 투수 (디버프 없음) ==========
+// 목표 포인트: 약 5이닝(4~6이닝)에 강판되도록 설계
+// 이닝당 평균 30-50P 획득 가정
 
 export const starterPitchers: PitcherWithDebuff[] = [
   {
     id: 'starter_1',
     name: '신인 투수',
     type: 'starter',
-    targetPoints: 100,
+    targetPoints: 200,
     debuffs: [],
-    description: '갓 올라온 신인',
+    description: '갓 올라온 신인 (4~5이닝)',
     icon: '🌱',
   },
   {
     id: 'starter_2',
     name: '평범한 투수',
     type: 'starter',
-    targetPoints: 120,
+    targetPoints: 250,
     debuffs: [],
-    description: '무난한 실력',
+    description: '무난한 실력 (5~6이닝)',
     icon: '⚾',
   },
   {
     id: 'starter_3',
     name: '베테랑 투수',
     type: 'starter',
-    targetPoints: 150,
+    targetPoints: 300,
     debuffs: [],
-    description: '노련한 투구',
+    description: '노련한 투구 (6~7이닝)',
     icon: '🧔',
   },
 ];

@@ -23,6 +23,7 @@ const MAX_DISCARD_COUNT = 5;         // 한번에 최대 버리기 장수
 const HAND_SIZE = 8;                 // 액션 핸드 크기
 
 const initialState: GameState = {
+  currentInning: 1,
   outs: 0,
   score: 0,
   totalPoints: 0,
@@ -291,6 +292,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     const { drawn: actionHand, remaining: actionDeck } = drawActionCards(reshuffledAction, HAND_SIZE);
 
     set({
+      currentInning: state.currentInning + 1,
       outs: 0,
       bases: emptyBases(),
       playerDeck: newPlayerDeck,

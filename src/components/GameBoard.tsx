@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { Diamond } from './Diamond';
-import { ScoreBoard } from './ScoreBoard';
+import { ScoreBoard, PitcherLineup } from './ScoreBoard';
 import { Hand } from './Hand';
 import { ActionHand } from './ActionCard';
 import { HandDisplay, AvailableHandsGuide } from './HandDisplay';
@@ -10,6 +10,7 @@ import { ScoreBreakdown } from './ScoreBreakdown';
 
 export function GameBoard() {
   const {
+    currentInning,
     score,
     totalPoints,
     outs,
@@ -48,14 +49,20 @@ export function GameBoard() {
     <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 px-2 sm:px-0">
       {/* 상단: 점수판 */}
       <ScoreBoard
+        currentInning={currentInning}
         currentPitcher={currentPitcher}
         pitcherPoints={pitcherPoints}
-        defeatedCount={defeatedPitchers.length}
-        remainingCount={pitcherLineup.length}
         score={score}
         totalPoints={totalPoints}
         outs={outs}
         discardsRemaining={discardsRemaining}
+      />
+
+      {/* 투수 라인업 */}
+      <PitcherLineup
+        defeatedPitchers={defeatedPitchers}
+        currentPitcher={currentPitcher}
+        remainingPitchers={pitcherLineup}
       />
 
       {/* 중앙: 다이아몬드 + 선택된 선수 */}
@@ -384,6 +391,7 @@ export function GameBoard() {
         <pre className="mt-2 p-2 bg-gray-900 rounded overflow-auto max-h-48">
           {JSON.stringify({
             phase,
+            currentInning,
             outs,
             currentPitcher: currentPitcher?.name,
             pitcherPoints,
