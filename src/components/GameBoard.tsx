@@ -8,6 +8,7 @@ import { HandDisplay, AvailableHandsGuide } from './HandDisplay';
 import { PlayerCardComponent } from './Card';
 import { ScoreBreakdown } from './ScoreBreakdown';
 import { Shop } from './Shop';
+import { getAllShopItems } from '../game/shop';
 
 export function GameBoard() {
   const {
@@ -43,6 +44,7 @@ export function GameBoard() {
 
   const [showGuide, setShowGuide] = useState(false);
   const [showDeckQueue, setShowDeckQueue] = useState(false);
+  const [showCatalog, setShowCatalog] = useState(false);
 
   useEffect(() => {
     initGame();
@@ -397,29 +399,192 @@ export function GameBoard() {
       {/* 디버그 정보 */}
       <details className="text-gray-500 text-xs">
         <summary className="cursor-pointer">디버그 정보</summary>
-        <pre className="mt-2 p-2 bg-gray-900 rounded overflow-auto max-h-48">
-          {JSON.stringify({
-            phase,
-            currentInning,
-            outs,
-            currentPitcher: currentPitcher?.name,
-            pitcherPoints,
-            pitcherTarget: currentPitcher?.targetPoints,
-            defeatedCount: defeatedPitchers.length,
-            remainingPitchers: pitcherLineup.length,
-            playerDeckSize: playerDeck.length,
-            actionDeckSize: actionDeck.length,
-            actionHandSize: actionHand.length,
-            selectedCardsCount: selectedActionCards.length,
-            batterAvg: selectedPlayer?.battingAverage,
-            runnersOnBase: {
-              first: bases.first?.name,
-              second: bases.second?.name,
-              third: bases.third?.name,
-            },
-          }, null, 2)}
-        </pre>
+        <div className="mt-2 space-y-2">
+          <button
+            onClick={() => setShowCatalog(true)}
+            className="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded text-xs"
+          >
+            전체 상점 아이템 보기
+          </button>
+          <pre className="p-2 bg-gray-900 rounded overflow-auto max-h-48">
+            {JSON.stringify({
+              phase,
+              currentInning,
+              outs,
+              currentPitcher: currentPitcher?.name,
+              pitcherPoints,
+              pitcherTarget: currentPitcher?.targetPoints,
+              defeatedCount: defeatedPitchers.length,
+              remainingPitchers: pitcherLineup.length,
+              playerDeckSize: playerDeck.length,
+              actionDeckSize: actionDeck.length,
+              actionHandSize: actionHand.length,
+              selectedCardsCount: selectedActionCards.length,
+              batterAvg: selectedPlayer?.battingAverage,
+              runnersOnBase: {
+                first: bases.first?.name,
+                second: bases.second?.name,
+                third: bases.third?.name,
+              },
+            }, null, 2)}
+          </pre>
+        </div>
       </details>
+
+      {/* 전체 아이템 카탈로그 모달 */}
+      {showCatalog && <ItemCatalogModal onClose={() => setShowCatalog(false)} />}
+    </div>
+  );
+}
+
+// 전체 아이템 카탈로그 모달
+function ItemCatalogModal({ onClose }: { onClose: () => void }) {
+  const allItems = getAllShopItems();
+  const [activeTab, setActiveTab] = useState<'coaches' | 'vouchers' | 'upgrades' | 'players'>('coaches');
+
+  return (
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+      <div className="bg-gray-800 rounded-xl p-6 max-w-4xl w-full max-h-[90vh] overflow-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-white">전체 상점 아이템 카탈로그</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-white text-2xl">×</button>
+        </div>
+
+        {/* 탭 */}
+        <div className="flex gap-2 mb-4">
+          {(['coaches', 'vouchers', 'upgrades', 'players'] as const).map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold ${
+                activeTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'
+              }`}
+            >
+              {tab === 'coaches' ? `코치 (${allItems.coaches.length})` :
+               tab === 'vouchers' ? `바우처 (${allItems.vouchers.length})` :
+               tab === 'upgrades' ? `강화 (${allItems.playerUpgrades.length + allItems.actionUpgrades.length})` :
+               `선수 (${Object.values(allItems.players).flat().length})`}
+            </button>
+          ))}
+        </div>
+
+        {/* 코치 */}
+        {activeTab === 'coaches' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            {allItems.coaches.map(coach => (
+              <div key={coach.id} className="bg-orange-900/30 border border-orange-500 rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-2xl">{coach.icon}</span>
+                  <span className="font-bold text-white">{coach.name}</span>
+                  <span className="ml-auto text-yellow-400 text-sm">{coach.price}G</span>
+                </div>
+                <div className="text-gray-300 text-sm">{coach.description}</div>
+                <div className="text-gray-500 text-xs mt-1">효과: {coach.effectType} +{coach.effectValue}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 바우처 */}
+        {activeTab === 'vouchers' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            {allItems.vouchers.map(voucher => (
+              <div key={voucher.id} className="bg-purple-900/30 border border-purple-500 rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-2xl">{voucher.icon}</span>
+                  <span className="font-bold text-white">{voucher.name}</span>
+                  <span className="ml-auto text-yellow-400 text-sm">{voucher.price}G</span>
+                </div>
+                <div className="text-gray-300 text-sm">{voucher.description}</div>
+                <div className="text-gray-500 text-xs mt-1">효과: {voucher.effectType} +{voucher.effectValue}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 강화 */}
+        {activeTab === 'upgrades' && (
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-white font-semibold mb-2">선수 강화</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {allItems.playerUpgrades.map(upgrade => (
+                  <div key={upgrade.id} className="bg-green-900/30 border border-green-500 rounded-lg p-3">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="font-bold text-white">{upgrade.name}</span>
+                      <span className="text-yellow-400 text-sm">{upgrade.price}G</span>
+                    </div>
+                    <div className="text-gray-300 text-sm">{upgrade.description}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h3 className="text-white font-semibold mb-2">액션 강화</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {allItems.actionUpgrades.map(upgrade => (
+                  <div key={upgrade.id} className="bg-yellow-900/30 border border-yellow-500 rounded-lg p-3">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="font-bold text-white">{upgrade.name}</span>
+                      <span className="text-yellow-400 text-sm">{upgrade.price}G</span>
+                    </div>
+                    <div className="text-gray-300 text-sm">{upgrade.description}</div>
+                    {upgrade.targetStat && <div className="text-gray-500 text-xs mt-1">대상: {upgrade.targetStat}</div>}
+                    {upgrade.targetMode && <div className="text-gray-500 text-xs mt-1">대상: {upgrade.targetMode}</div>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 선수 */}
+        {activeTab === 'players' && (
+          <div className="space-y-4">
+            {(['legendary', 'epic', 'rare', 'common'] as const).map(rarity => (
+              <div key={rarity}>
+                <h3 className={`font-semibold mb-2 ${
+                  rarity === 'legendary' ? 'text-yellow-400' :
+                  rarity === 'epic' ? 'text-purple-400' :
+                  rarity === 'rare' ? 'text-blue-400' : 'text-gray-400'
+                }`}>
+                  {rarity === 'legendary' ? '전설' : rarity === 'epic' ? '영웅' : rarity === 'rare' ? '희귀' : '일반'}
+                  ({allItems.players[rarity].length}명)
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                  {allItems.players[rarity].map(player => (
+                    <div key={player.id} className={`rounded-lg p-2 text-xs ${
+                      rarity === 'legendary' ? 'bg-yellow-900/30 border border-yellow-500' :
+                      rarity === 'epic' ? 'bg-purple-900/30 border border-purple-500' :
+                      rarity === 'rare' ? 'bg-blue-900/30 border border-blue-500' :
+                      'bg-gray-700 border border-gray-600'
+                    }`}>
+                      <div className="font-bold text-white">{player.name}</div>
+                      <div className="text-gray-400">
+                        타율 {(player.battingAverage * 100).toFixed(0)}% | P{player.power} | S{player.speed}
+                      </div>
+                      <div className="flex gap-1 mt-1">
+                        {player.tags.map(tag => (
+                          <span key={tag} className="text-[10px]">
+                            {tag === 'speed' ? '👟' : tag === 'power' ? '💪' : tag === 'contact' ? '🎯' : '👀'}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <button
+          onClick={onClose}
+          className="mt-4 w-full py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg"
+        >
+          닫기
+        </button>
+      </div>
     </div>
   );
 }

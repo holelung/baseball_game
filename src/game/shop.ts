@@ -459,3 +459,36 @@ function getPlayerDescription(player: PlayerCard): string {
   const tags = player.tags.length > 0 ? ` | ${player.tags.join(', ')}` : '';
   return stats + tags;
 }
+
+// ========== 디버그용: 전체 아이템 목록 ==========
+
+export interface AllShopItems {
+  coaches: Coach[];
+  vouchers: Voucher[];
+  playerUpgrades: PlayerUpgrade[];
+  actionUpgrades: ActionUpgrade[];
+  players: {
+    common: PlayerCard[];
+    rare: PlayerCard[];
+    epic: PlayerCard[];
+    legendary: PlayerCard[];
+  };
+}
+
+/**
+ * 개발용: 모든 상점 아이템 목록 반환
+ */
+export function getAllShopItems(): AllShopItems {
+  return {
+    coaches: ALL_COACHES,
+    vouchers: ALL_VOUCHERS,
+    playerUpgrades: PLAYER_UPGRADES,
+    actionUpgrades: ACTION_UPGRADES,
+    players: {
+      common: commonPlayers,
+      rare: rarePlayers,
+      epic: epicPlayers,
+      legendary: legendaryPlayers,
+    },
+  };
+}
