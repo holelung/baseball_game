@@ -4,6 +4,7 @@ import { shuffle, drawPlayers, addToBottom, createActionDeck, drawActionCards, t
 import { emptyBases, executePlay, advanceRunners } from '../game/scoring';
 import { evaluateActionMode } from '../game/actionMode';
 import { starterPlayers } from '../data/starterPlayers';
+import { createDefaultPitcherLineup } from '../data/pitchers';
 
 interface GameActions {
   initGame: () => void;
@@ -12,34 +13,37 @@ interface GameActions {
   discardAndDraw: () => void;      // 선택한 카드 버리고 새로 뽑기
   executeSelectedPlay: () => void;
   nextTurn: () => void;
-  startNewInning: () => void;
+  nextPitcher: () => void;         // 다음 투수로 전환
+  resetAfterOuts: () => void;      // 3아웃 후 리셋
   resetGame: () => void;
 }
 
-const MAX_INNINGS = 9;
-const INITIAL_DISCARDS = 3;          // 이닝당 버리기 횟수
+const INITIAL_DISCARDS = 3;          // 투수당 버리기 횟수
 const MAX_DISCARD_COUNT = 5;         // 한번에 최대 버리기 장수
-const HAND_SIZE = 8;                 // 트럼프 핸드 크기
-const BASE_TARGET_POINTS = 100;
+const HAND_SIZE = 8;                 // 액션 핸드 크기
 
 const initialState: GameState = {
-  currentInning: 1,
-  maxInnings: MAX_INNINGS,
   outs: 0,
   score: 0,
   totalPoints: 0,
+  // 투수 시스템
+  currentPitcher: null,
+  pitcherPoints: 0,
+  pitcherLineup: [],
+  defeatedPitchers: [],
+  // 루 상태
   bases: emptyBases(),
+  // 선수 카드
   playerDeck: [],
   playerHand: [],
   selectedPlayer: null,
   isFirstAtBat: true,
+  // 액션 카드
   actionDeck: [],
   actionHand: [],
   selectedActionCards: [],
   currentResult: null,
   phase: 'selectPlayer',
-  targetPoints: BASE_TARGET_POINTS,
-  inningPoints: 0,
   discardsRemaining: INITIAL_DISCARDS,
 };
 
@@ -47,16 +51,20 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
   ...initialState,
 
   initGame: () => {
-    // 선수 카드 초기화: 모두 revealed: false (순서 모름)
+    // 선수 카드 초기화
     const freshPlayers = starterPlayers.map(p => ({ ...p, revealed: false }));
     const shuffledPlayers = shuffle(freshPlayers);
     const shuffledAction = shuffle(createActionDeck());
 
-    // 최초 3장 드로우 - 핸드에 온 카드는 revealed: true
+    // 최초 3장 드로우
     const { drawn, remaining: playerDeck } = drawPlayers(shuffledPlayers, 3);
     const playerHand = drawn.map(p => ({ ...p, revealed: true }));
     // 액션 카드 8장 드로우
     const { drawn: actionHand, remaining: actionDeck } = drawActionCards(shuffledAction, HAND_SIZE);
+
+    // 투수 라인업 생성
+    const pitcherLineup = createDefaultPitcherLineup();
+    const [firstPitcher, ...remainingPitchers] = pitcherLineup;
 
     set({
       ...initialState,
@@ -65,6 +73,10 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       actionDeck,
       actionHand,
       isFirstAtBat: true,
+      currentPitcher: firstPitcher,
+      pitcherLineup: remainingPitchers,
+      defeatedPitchers: [],
+      pitcherPoints: 0,
       phase: 'selectPlayer',
     });
   },
@@ -81,7 +93,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
 
     set({
       selectedPlayer,
-      playerHand: remainingHand,  // 남은 2장 유지
+      playerHand: remainingHand,
       selectedActionCards: [],
       phase: 'selectCards',
     });
@@ -119,7 +131,6 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     let drawnCards: ActionCard[] = [];
 
     if (newActionDeck.length < discardCount) {
-      // 덱이 부족하면 재셔플
       newActionDeck = shuffle(createActionDeck());
     }
 
@@ -141,12 +152,12 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     const state = get();
     if (state.phase !== 'selectCards') return;
     if (!state.selectedPlayer) return;
-    if (state.selectedActionCards.length === 0) return; // 카드 선택 필수
+    if (state.selectedActionCards.length === 0) return;
 
     // 선택한 카드로 모드 판정
     const modeResult = evaluateActionMode(state.selectedActionCards);
 
-    // 확률 기반 플레이 실행 (outs와 isFirstAtBat 전달)
+    // 확률 기반 플레이 실행
     const playResult = executePlay(modeResult, state.selectedPlayer, state.bases, state.outs, state.isFirstAtBat);
 
     const isOut = playResult.baseballResult === 'out';
@@ -154,15 +165,13 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     let newPhase: GamePhase = 'showResult';
     let updatedPlayerDeck = state.playerDeck;
     let newBases: BaseState = state.bases;
+    let newPitcherPoints = state.pitcherPoints;
 
     if (isOut) {
       newOuts += 1;
-      // 사용한 카드를 큐 뒤로 보낼 때 revealed: true
+      // 사용한 카드를 큐 뒤로
       const revealedPlayer = { ...state.selectedPlayer, revealed: true };
       updatedPlayerDeck = addToBottom(state.playerDeck, revealedPlayer);
-      if (newOuts >= 3) {
-        newPhase = 'inningEnd';
-      }
     } else {
       // 안타 시 베이스 상태 업데이트
       const advanceCount = playResult.baseballResult === 'single' ? 1
@@ -171,14 +180,23 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       const advanceResult = advanceRunners(state.bases, state.selectedPlayer, advanceCount);
       newBases = advanceResult.newBases;
 
-      // 득점한 주자들을 덱 뒤로 보냄 (revealed: true)
+      // 득점한 주자들을 덱 뒤로
       advanceResult.scoredRunners.forEach(runner => {
         const revealedRunner = { ...runner, revealed: true };
         updatedPlayerDeck = addToBottom(updatedPlayerDeck, revealedRunner);
       });
+
+      // 포인트 획득 -> 투수 포인트에 누적
+      newPitcherPoints += playResult.pointsEarned;
     }
 
-    // 사용한 카드 제거, 남은 카드 유지
+    // 투수 강판 체크
+    const currentPitcher = state.currentPitcher;
+    if (currentPitcher && newPitcherPoints >= currentPitcher.targetPoints) {
+      newPhase = 'pitcherDefeated';
+    }
+
+    // 사용한 카드 제거
     const usedCardIds = new Set(state.selectedActionCards.map(c => c.id));
     const remainingActionHand = state.actionHand.filter(c => !usedCardIds.has(c.id));
 
@@ -187,37 +205,39 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       bases: newBases,
       score: state.score + playResult.runsScored,
       totalPoints: state.totalPoints + playResult.pointsEarned,
-      inningPoints: state.inningPoints + playResult.pointsEarned,
+      pitcherPoints: newPitcherPoints,
       outs: newOuts,
       currentResult: playResult,
       phase: newPhase,
-      actionHand: remainingActionHand,  // 남은 카드 유지
+      actionHand: remainingActionHand,
       selectedActionCards: [],
     });
   },
 
   nextTurn: () => {
     const state = get();
-    if (state.phase === 'inningEnd') return;
 
-    // 선수 카드: 현재 핸드(2장)에 1장 추가해서 3장 유지
+    // 3아웃이면 리셋
+    if (state.outs >= 3) {
+      get().resetAfterOuts();
+      return;
+    }
+
+    // 선수 카드: 현재 핸드에 1장 추가
     let newPlayerDeck = state.playerDeck;
 
     if (newPlayerDeck.length === 0) {
-      // 덱이 비었으면 재구성 (이미 순환한 카드들이므로 revealed 유지)
       const freshPlayers = starterPlayers.map(p => ({ ...p, revealed: false }));
       newPlayerDeck = shuffle(freshPlayers);
     }
 
     const { drawn, remaining } = drawPlayers(newPlayerDeck, 1);
-    // 핸드에 뽑힌 카드는 revealed: true
     const drawnPlayer = drawn.map(p => ({ ...p, revealed: true }));
     newPlayerDeck = remaining;
 
-    // 기존 핸드(2장) + 새로 뽑은 1장 = 3장
     const newPlayerHand = [...state.playerHand, ...drawnPlayer];
 
-    // 액션 카드: 남은 카드 유지 + 부족한 만큼만 채우기
+    // 액션 카드 채우기
     const currentActionHand = state.actionHand.map(c => ({ ...c, selected: false }));
     const needToDraw = HAND_SIZE - currentActionHand.length;
 
@@ -246,21 +266,16 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     });
   },
 
-  startNewInning: () => {
+  resetAfterOuts: () => {
     const state = get();
 
-    if (state.currentInning >= state.maxInnings) {
-      set({ phase: 'gameEnd' });
-      return;
-    }
-
-    // 루상 주자들을 덱 하단으로 (revealed: true 유지)
+    // 루상 주자들을 덱 하단으로
     let newPlayerDeck = state.playerDeck;
     if (state.bases.third) newPlayerDeck = addToBottom(newPlayerDeck, { ...state.bases.third, revealed: true });
     if (state.bases.second) newPlayerDeck = addToBottom(newPlayerDeck, { ...state.bases.second, revealed: true });
     if (state.bases.first) newPlayerDeck = addToBottom(newPlayerDeck, { ...state.bases.first, revealed: true });
 
-    // 선수 패는 유지하고, 부족한 만큼만 뽑기 (보통 2장 → 1장 뽑아서 3장)
+    // 선수 패 유지, 부족하면 채우기
     const currentPlayerHand = state.playerHand;
     const needToDraw = 3 - currentPlayerHand.length;
     let newPlayerHand = currentPlayerHand;
@@ -275,10 +290,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     const reshuffledAction = shuffle(createActionDeck());
     const { drawn: actionHand, remaining: actionDeck } = drawActionCards(reshuffledAction, HAND_SIZE);
 
-    const newTargetPoints = BASE_TARGET_POINTS + (state.currentInning * 50);
-
     set({
-      currentInning: state.currentInning + 1,
       outs: 0,
       bases: emptyBases(),
       playerDeck: newPlayerDeck,
@@ -290,8 +302,69 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       selectedActionCards: [],
       currentResult: null,
       phase: 'selectPlayer',
-      targetPoints: newTargetPoints,
-      inningPoints: 0,
+      discardsRemaining: INITIAL_DISCARDS,
+    });
+  },
+
+  nextPitcher: () => {
+    const state = get();
+    const currentPitcher = state.currentPitcher;
+
+    // 현재 투수를 격파 목록에 추가
+    const defeatedPitchers = currentPitcher
+      ? [...state.defeatedPitchers, currentPitcher]
+      : state.defeatedPitchers;
+
+    // 다음 투수 가져오기
+    if (state.pitcherLineup.length === 0) {
+      // 모든 투수 강판 -> 게임 승리
+      set({
+        defeatedPitchers,
+        currentPitcher: null,
+        phase: 'gameEnd',
+      });
+      return;
+    }
+
+    const [nextPitcher, ...remainingPitchers] = state.pitcherLineup;
+
+    // 루상 주자들을 덱 하단으로
+    let newPlayerDeck = state.playerDeck;
+    if (state.bases.third) newPlayerDeck = addToBottom(newPlayerDeck, { ...state.bases.third, revealed: true });
+    if (state.bases.second) newPlayerDeck = addToBottom(newPlayerDeck, { ...state.bases.second, revealed: true });
+    if (state.bases.first) newPlayerDeck = addToBottom(newPlayerDeck, { ...state.bases.first, revealed: true });
+
+    // 선수 패 유지, 부족하면 채우기
+    const currentPlayerHand = state.playerHand;
+    const needToDraw = 3 - currentPlayerHand.length;
+    let newPlayerHand = currentPlayerHand;
+
+    if (needToDraw > 0) {
+      const { drawn, remaining } = drawPlayers(newPlayerDeck, needToDraw);
+      newPlayerHand = [...currentPlayerHand, ...drawn.map(p => ({ ...p, revealed: true }))];
+      newPlayerDeck = remaining;
+    }
+
+    // 액션덱 재셔플
+    const reshuffledAction = shuffle(createActionDeck());
+    const { drawn: actionHand, remaining: actionDeck } = drawActionCards(reshuffledAction, HAND_SIZE);
+
+    set({
+      currentPitcher: nextPitcher,
+      pitcherLineup: remainingPitchers,
+      defeatedPitchers,
+      pitcherPoints: 0,
+      outs: 0,
+      bases: emptyBases(),
+      playerDeck: newPlayerDeck,
+      playerHand: newPlayerHand,
+      selectedPlayer: null,
+      isFirstAtBat: true,
+      actionDeck,
+      actionHand,
+      selectedActionCards: [],
+      currentResult: null,
+      phase: 'selectPlayer',
       discardsRemaining: INITIAL_DISCARDS,
     });
   },

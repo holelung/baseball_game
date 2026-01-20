@@ -135,47 +135,61 @@ export interface BaseState {
 }
 
 // 게임 단계
-export type GamePhase = 
+export type GamePhase =
   | 'selectPlayer'  // 선수 선택 단계
   | 'selectCards'   // 트럼프 카드 선택 단계
   | 'showResult'    // 결과 표시 단계
-  | 'inningEnd'     // 이닝 종료
+  | 'pitcherDefeated' // 투수 강판
   | 'gameEnd';      // 게임 종료
+
+// ========== 투수 시스템 ==========
+
+// 투수 타입
+export type PitcherType = 'starter' | 'reliever' | 'closer';
+
+// 투수 정보
+export interface Pitcher {
+  id: string;
+  name: string;
+  type: PitcherType;
+  targetPoints: number;  // 강판에 필요한 포인트
+  description?: string;
+}
 
 // 게임 상태
 export interface GameState {
-  // 이닝 정보
-  currentInning: number;
-  maxInnings: number;         // 최대 이닝 (9이닝)
+  // 아웃 카운트
   outs: number;
   score: number;              // 야구 점수 (득점)
-  totalPoints: number;        // 총 포인트 (Score × 배율)
-  
+  totalPoints: number;        // 총 포인트
+
+  // 투수 시스템
+  currentPitcher: Pitcher | null;  // 현재 상대 투수
+  pitcherPoints: number;           // 현재 투수에게 획득한 포인트
+  pitcherLineup: Pitcher[];        // 남은 투수 라인업
+  defeatedPitchers: Pitcher[];     // 강판시킨 투수들
+
   // 루 상태
   bases: BaseState;
-  
+
   // 선수 카드 덱 상태
   playerDeck: PlayerCard[];      // 선수덱 (남은 카드)
   playerHand: PlayerCard[];      // 선수 손패 (최초 3장, 이후 1장씩)
   selectedPlayer: PlayerCard | null; // 선택된 선수
   isFirstAtBat: boolean;         // 이닝 첫 타석 여부
-  
+
   // 액션 카드 덱 상태
   actionDeck: ActionCard[];        // 액션덱 (남은 카드)
   actionHand: ActionCard[];        // 액션 손패 (8장)
   selectedActionCards: ActionCard[]; // 선택한 액션 카드
-  
+
   // 현재 결과
   currentResult: PlayResult | null;
-  
+
   // 게임 단계
   phase: GamePhase;
-  
-  // 이닝별 목표 포인트
-  targetPoints: number;
-  inningPoints: number;       // 현재 이닝에서 획득한 포인트
-  
-  // 버리기 횟수 (이닝당)
+
+  // 버리기 횟수 (투수당)
   discardsRemaining: number;
 }
 

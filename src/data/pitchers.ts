@@ -211,22 +211,22 @@ export const DEBUFF_INFO: Record<DebuffType, DebuffInfo> = {
 
 // ========== 투수 인터페이스 ==========
 
-export interface Pitcher {
-  id: string;
-  name: string;
-  type: 'starter' | 'reliever' | 'closer';  // 선발/중계/마무리
+import { Pitcher as BasePitcher, PitcherType } from '../game/types';
+
+// 디버프 포함 확장 인터페이스 (나중에 디버프 적용 시 사용)
+export interface PitcherWithDebuff extends BasePitcher {
   debuffs: DebuffType[];
-  description?: string;
   icon?: string;
 }
 
-// ========== 선발 투수 (디버프 없음) ==========
+// ========== 선발 투수 (디버프 없음, 낮은 목표 포인트) ==========
 
-export const starterPitchers: Pitcher[] = [
+export const starterPitchers: PitcherWithDebuff[] = [
   {
     id: 'starter_1',
     name: '신인 투수',
     type: 'starter',
+    targetPoints: 100,
     debuffs: [],
     description: '갓 올라온 신인',
     icon: '🌱',
@@ -235,6 +235,7 @@ export const starterPitchers: Pitcher[] = [
     id: 'starter_2',
     name: '평범한 투수',
     type: 'starter',
+    targetPoints: 120,
     debuffs: [],
     description: '무난한 실력',
     icon: '⚾',
@@ -243,20 +244,22 @@ export const starterPitchers: Pitcher[] = [
     id: 'starter_3',
     name: '베테랑 투수',
     type: 'starter',
+    targetPoints: 150,
     debuffs: [],
     description: '노련한 투구',
     icon: '🧔',
   },
 ];
 
-// ========== 중계 투수 (단일 디버프) ==========
+// ========== 중계 투수 (단일 디버프, 중간 목표 포인트) ==========
 
-export const relieverPitchers: Pitcher[] = [
+export const relieverPitchers: PitcherWithDebuff[] = [
   // 카드 방해형
   {
     id: 'reliever_seal',
     name: '봉쇄형 투수',
     type: 'reliever',
+    targetPoints: 180,
     debuffs: ['hand_reduce_1'],
     description: '핸드 크기를 줄인다',
     icon: '🃏',
@@ -265,6 +268,7 @@ export const relieverPitchers: Pitcher[] = [
     id: 'reliever_disrupt',
     name: '교란형 투수',
     type: 'reliever',
+    targetPoints: 180,
     debuffs: ['card_seal_1'],
     description: '카드를 봉인한다',
     icon: '🔒',
@@ -274,6 +278,7 @@ export const relieverPitchers: Pitcher[] = [
     id: 'reliever_quick',
     name: '속공형 투수',
     type: 'reliever',
+    targetPoints: 200,
     debuffs: ['discard_reduce_1'],
     description: '버리기 기회를 줄인다',
     icon: '🔄',
@@ -282,6 +287,7 @@ export const relieverPitchers: Pitcher[] = [
     id: 'reliever_defense',
     name: '수비형 투수',
     type: 'reliever',
+    targetPoints: 200,
     debuffs: ['select_reduce_1'],
     description: '카드 선택을 제한한다',
     icon: '✋',
@@ -291,6 +297,7 @@ export const relieverPitchers: Pitcher[] = [
     id: 'reliever_control',
     name: '제구형 투수',
     type: 'reliever',
+    targetPoints: 220,
     debuffs: ['hit_reduce_10'],
     description: '안타 확률을 낮춘다',
     icon: '📉',
@@ -300,6 +307,7 @@ export const relieverPitchers: Pitcher[] = [
     id: 'reliever_anti_power',
     name: '파워킬러 투수',
     type: 'reliever',
+    targetPoints: 200,
     debuffs: ['block_power'],
     description: '파워 스윙을 막는다',
     icon: '🚫💪',
@@ -308,6 +316,7 @@ export const relieverPitchers: Pitcher[] = [
     id: 'reliever_anti_contact',
     name: '컨택킬러 투수',
     type: 'reliever',
+    targetPoints: 200,
     debuffs: ['block_contact'],
     description: '정확한 타격을 막는다',
     icon: '🚫🎯',
@@ -316,6 +325,7 @@ export const relieverPitchers: Pitcher[] = [
     id: 'reliever_anti_speed',
     name: '스피드킬러 투수',
     type: 'reliever',
+    targetPoints: 200,
     debuffs: ['block_speed'],
     description: '스피드 플레이를 막는다',
     icon: '🚫👟',
@@ -324,6 +334,7 @@ export const relieverPitchers: Pitcher[] = [
     id: 'reliever_anti_eye',
     name: '선구안킬러 투수',
     type: 'reliever',
+    targetPoints: 200,
     debuffs: ['block_eye'],
     description: '선구안 모드를 막는다',
     icon: '🚫👀',
@@ -333,6 +344,7 @@ export const relieverPitchers: Pitcher[] = [
     id: 'reliever_power_nerf',
     name: '파워억제 투수',
     type: 'reliever',
+    targetPoints: 180,
     debuffs: ['power_nerf'],
     description: '파워 모드 조건을 강화',
     icon: '⬇️💪',
@@ -341,6 +353,7 @@ export const relieverPitchers: Pitcher[] = [
     id: 'reliever_contact_nerf',
     name: '컨택억제 투수',
     type: 'reliever',
+    targetPoints: 180,
     debuffs: ['contact_nerf'],
     description: '컨택 모드 조건을 강화',
     icon: '⬇️🎯',
@@ -350,20 +363,22 @@ export const relieverPitchers: Pitcher[] = [
     id: 'reliever_synergy',
     name: '시너지차단 투수',
     type: 'reliever',
+    targetPoints: 220,
     debuffs: ['synergy_block'],
     description: '시너지 발동을 막는다',
     icon: '💫',
   },
 ];
 
-// ========== 마무리 투수 (복합 디버프) ==========
+// ========== 마무리 투수 (복합 디버프, 높은 목표 포인트) ==========
 
-export const closerPitchers: Pitcher[] = [
+export const closerPitchers: PitcherWithDebuff[] = [
   // 단일 강력 디버프
   {
     id: 'closer_pressure',
     name: '압박형 마무리',
     type: 'closer',
+    targetPoints: 280,
     debuffs: ['hand_reduce_2'],
     description: '극심한 핸드 압박',
     icon: '😤',
@@ -372,6 +387,7 @@ export const closerPitchers: Pitcher[] = [
     id: 'closer_shutout',
     name: '완봉형 마무리',
     type: 'closer',
+    targetPoints: 280,
     debuffs: ['discard_reduce_2'],
     description: '버리기 극도로 제한',
     icon: '🔒',
@@ -380,6 +396,7 @@ export const closerPitchers: Pitcher[] = [
     id: 'closer_fortress',
     name: '철벽형 마무리',
     type: 'closer',
+    targetPoints: 300,
     debuffs: ['select_reduce_2'],
     description: '카드 선택 극도로 제한',
     icon: '🏰',
@@ -388,6 +405,7 @@ export const closerPitchers: Pitcher[] = [
     id: 'closer_strikeout',
     name: '탈삼진 에이스',
     type: 'closer',
+    targetPoints: 320,
     debuffs: ['hit_reduce_20'],
     description: '안타 확률 대폭 감소',
     icon: '🔥',
@@ -397,6 +415,7 @@ export const closerPitchers: Pitcher[] = [
     id: 'closer_combo_1',
     name: '봉쇄+속공 마무리',
     type: 'closer',
+    targetPoints: 300,
     debuffs: ['hand_reduce_1', 'discard_reduce_1'],
     description: '핸드 감소 + 버리기 감소',
     icon: '💀',
@@ -405,6 +424,7 @@ export const closerPitchers: Pitcher[] = [
     id: 'closer_combo_2',
     name: '교란+제구 마무리',
     type: 'closer',
+    targetPoints: 300,
     debuffs: ['card_seal_1', 'hit_reduce_10'],
     description: '카드 봉인 + 안타 확률 감소',
     icon: '👻',
@@ -413,6 +433,7 @@ export const closerPitchers: Pitcher[] = [
     id: 'closer_combo_3',
     name: '수비+봉쇄 마무리',
     type: 'closer',
+    targetPoints: 320,
     debuffs: ['select_reduce_1', 'hand_reduce_1'],
     description: '선택 제한 + 핸드 감소',
     icon: '🛡️',
@@ -422,6 +443,7 @@ export const closerPitchers: Pitcher[] = [
     id: 'closer_ability_seal',
     name: '능력봉인 마무리',
     type: 'closer',
+    targetPoints: 350,
     debuffs: ['ability_block', 'synergy_block'],
     description: '능력과 시너지 모두 봉인',
     icon: '⛔',
@@ -430,6 +452,7 @@ export const closerPitchers: Pitcher[] = [
     id: 'closer_mode_killer',
     name: '모드킬러 마무리',
     type: 'closer',
+    targetPoints: 350,
     debuffs: ['block_power', 'block_contact'],
     description: '주요 모드 2개 봉쇄',
     icon: '🚫',
@@ -439,6 +462,7 @@ export const closerPitchers: Pitcher[] = [
     id: 'closer_nightmare',
     name: '악몽의 마무리',
     type: 'closer',
+    targetPoints: 380,
     debuffs: ['hand_reduce_1', 'discard_reduce_1', 'hit_reduce_10'],
     description: '트리플 디버프',
     icon: '😈',
@@ -447,6 +471,7 @@ export const closerPitchers: Pitcher[] = [
     id: 'closer_final',
     name: '최종 수호자',
     type: 'closer',
+    targetPoints: 400,
     debuffs: ['hand_reduce_2', 'select_reduce_1', 'ability_block'],
     description: '최강의 마무리 투수',
     icon: '👑',
@@ -455,7 +480,7 @@ export const closerPitchers: Pitcher[] = [
 
 // ========== 전체 투수 풀 ==========
 
-export const allPitchers: Pitcher[] = [
+export const allPitchers: PitcherWithDebuff[] = [
   ...starterPitchers,
   ...relieverPitchers,
   ...closerPitchers,
@@ -466,14 +491,14 @@ export const allPitchers: Pitcher[] = [
 /**
  * ID로 투수 찾기
  */
-export function getPitcherById(id: string): Pitcher | undefined {
+export function getPitcherById(id: string): PitcherWithDebuff | undefined {
   return allPitchers.find(p => p.id === id);
 }
 
 /**
  * 타입별 투수 가져오기
  */
-export function getPitchersByType(type: Pitcher['type']): Pitcher[] {
+export function getPitchersByType(type: PitcherType): PitcherWithDebuff[] {
   return allPitchers.filter(p => p.type === type);
 }
 
@@ -489,4 +514,17 @@ export function calculateDebuffSeverity(debuffs: DebuffType[]): number {
       case 'severe': return sum + 3;
     }
   }, 0);
+}
+
+/**
+ * 기본 투수 라인업 생성 (테스트용: 선발 3명)
+ */
+export function createDefaultPitcherLineup(): BasePitcher[] {
+  return starterPitchers.map(p => ({
+    id: p.id,
+    name: p.name,
+    type: p.type,
+    targetPoints: p.targetPoints,
+    description: p.description,
+  }));
 }

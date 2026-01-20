@@ -10,14 +10,14 @@ import { ScoreBreakdown } from './ScoreBreakdown';
 
 export function GameBoard() {
   const {
-    currentInning,
-    maxInnings,
     score,
     totalPoints,
-    inningPoints,
-    targetPoints,
     outs,
     bases,
+    currentPitcher,
+    pitcherPoints,
+    pitcherLineup,
+    defeatedPitchers,
     playerHand,
     playerDeck,
     selectedPlayer,
@@ -33,7 +33,7 @@ export function GameBoard() {
     discardAndDraw,
     executeSelectedPlay,
     nextTurn,
-    startNewInning,
+    nextPitcher,
     resetGame,
   } = useGameStore();
 
@@ -48,12 +48,12 @@ export function GameBoard() {
     <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 px-2 sm:px-0">
       {/* 상단: 점수판 */}
       <ScoreBoard
-        inning={currentInning}
-        maxInnings={maxInnings}
+        currentPitcher={currentPitcher}
+        pitcherPoints={pitcherPoints}
+        defeatedCount={defeatedPitchers.length}
+        remainingCount={pitcherLineup.length}
         score={score}
         totalPoints={totalPoints}
-        inningPoints={inningPoints}
-        targetPoints={targetPoints}
         outs={outs}
         discardsRemaining={discardsRemaining}
       />
@@ -61,7 +61,7 @@ export function GameBoard() {
       {/* 중앙: 다이아몬드 + 선택된 선수 */}
       <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-8">
         <Diamond bases={bases} />
-        
+
         <div className="flex flex-col items-center gap-2">
           <div className="text-gray-400 text-sm">현재 타자</div>
           {selectedPlayer ? (
@@ -72,7 +72,7 @@ export function GameBoard() {
             </div>
           )}
         </div>
-        
+
         <div className="text-center text-gray-400 text-xs sm:text-sm">
           <button
             onClick={() => setShowDeckQueue(true)}
@@ -202,41 +202,53 @@ export function GameBoard() {
               </div>
             )}
 
+            {/* 3아웃 경고 */}
+            {outs >= 3 && (
+              <div className="text-red-400 text-sm">
+                3아웃! 베이스가 초기화됩니다.
+              </div>
+            )}
+
             <button
               onClick={nextTurn}
               className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
             >
-              다음 타자
+              {outs >= 3 ? '다음 공격' : '다음 타자'}
             </button>
           </div>
         )}
 
-        {/* 이닝 종료 */}
-        {phase === 'inningEnd' && (
+        {/* 투수 강판 */}
+        {phase === 'pitcherDefeated' && currentPitcher && (
           <div className="text-center space-y-4">
-            <div className="text-2xl text-white font-bold">
-              {currentInning}이닝 종료!
+            <div className="text-3xl text-yellow-400 font-bold animate-bounce">
+              투수 강판!
+            </div>
+            <div className="text-xl text-white">
+              {currentPitcher.name}을(를) 물리쳤습니다!
             </div>
             <div className="space-y-2 text-gray-300">
-              <div>이번 이닝 득점: <span className="text-blue-400 font-bold">{score}점</span></div>
-              <div>이번 이닝 포인트: <span className="text-green-400 font-bold">{inningPoints}P</span></div>
-              <div className={inningPoints >= targetPoints ? 'text-green-400' : 'text-red-400'}>
-                목표: {targetPoints}P - {inningPoints >= targetPoints ? '달성!' : '미달성'}
-              </div>
+              <div>획득 포인트: <span className="text-green-400 font-bold">{pitcherPoints}P</span></div>
+              <div>목표 달성: <span className="text-blue-400">{currentPitcher.targetPoints}P</span></div>
             </div>
-            
-            {currentInning < maxInnings ? (
-              <button
-                onClick={startNewInning}
-                className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors"
-              >
-                {currentInning + 1}이닝 시작
-              </button>
+
+            {pitcherLineup.length > 0 ? (
+              <div className="space-y-3">
+                <div className="text-gray-400">
+                  다음 투수: <span className="text-white font-bold">{pitcherLineup[0].name}</span>
+                </div>
+                <button
+                  onClick={nextPitcher}
+                  className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors"
+                >
+                  다음 투수 상대하기
+                </button>
+              </div>
             ) : (
               <div className="space-y-3">
-                <div className="text-xl text-yellow-400">경기 종료!</div>
+                <div className="text-xl text-yellow-400">모든 투수를 물리쳤습니다!</div>
                 <button
-                  onClick={startNewInning}
+                  onClick={nextPitcher}
                   className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors"
                 >
                   결과 확인
@@ -250,7 +262,7 @@ export function GameBoard() {
         {phase === 'gameEnd' && (
           <div className="text-center space-y-4">
             <div className="text-3xl text-yellow-400 font-bold">
-              게임 종료!
+              게임 클리어!
             </div>
             <div className="space-y-2">
               <div className="text-2xl text-blue-400">
@@ -259,7 +271,25 @@ export function GameBoard() {
               <div className="text-2xl text-green-400">
                 총 포인트: {totalPoints}P
               </div>
+              <div className="text-lg text-gray-400">
+                강판시킨 투수: {defeatedPitchers.length}명
+              </div>
             </div>
+
+            {/* 강판시킨 투수 목록 */}
+            {defeatedPitchers.length > 0 && (
+              <div className="bg-gray-800 rounded-lg p-4 mt-4">
+                <div className="text-gray-400 text-sm mb-2">강판 기록</div>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {defeatedPitchers.map((pitcher, idx) => (
+                    <div key={pitcher.id} className="bg-gray-700 rounded px-3 py-1 text-sm">
+                      {idx + 1}. {pitcher.name}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <button
               onClick={() => {
                 resetGame();
@@ -273,7 +303,7 @@ export function GameBoard() {
         )}
       </div>
 
-      {/* 다음 선수 미리보기 (revealed만 표시) */}
+      {/* 다음 선수 미리보기 */}
       {playerDeck.length > 0 && phase === 'selectPlayer' && (
         <div className="bg-gray-800/30 rounded-lg p-3">
           <div className="text-gray-400 text-xs mb-2">다음에 나올 선수:</div>
@@ -300,18 +330,18 @@ export function GameBoard() {
                 ×
               </button>
             </div>
-            
+
             <div className="text-gray-400 text-sm mb-4">
               덱 앞쪽(먼저 나옴) → 덱 뒤쪽(나중에 나옴)
             </div>
-            
+
             <div className="flex flex-wrap gap-2">
               {playerDeck.map((player, idx) => (
                 <div
                   key={`${player.id}-${idx}`}
                   className={`w-20 h-28 rounded-lg flex flex-col items-center justify-center text-xs
-                    ${player.revealed 
-                      ? 'bg-gradient-to-br from-blue-600 to-blue-800 text-white' 
+                    ${player.revealed
+                      ? 'bg-gradient-to-br from-blue-600 to-blue-800 text-white'
                       : 'bg-gradient-to-br from-gray-600 to-gray-800 text-gray-400'
                     }`}
                 >
@@ -333,11 +363,11 @@ export function GameBoard() {
                 </div>
               ))}
             </div>
-            
+
             <div className="mt-4 text-gray-500 text-xs">
               * 사용한 적 있는 선수는 순서가 공개됩니다
             </div>
-            
+
             <button
               onClick={() => setShowDeckQueue(false)}
               className="mt-4 w-full py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg"
@@ -355,7 +385,11 @@ export function GameBoard() {
           {JSON.stringify({
             phase,
             outs,
-            currentInning,
+            currentPitcher: currentPitcher?.name,
+            pitcherPoints,
+            pitcherTarget: currentPitcher?.targetPoints,
+            defeatedCount: defeatedPitchers.length,
+            remainingPitchers: pitcherLineup.length,
             playerDeckSize: playerDeck.length,
             actionDeckSize: actionDeck.length,
             actionHandSize: actionHand.length,
