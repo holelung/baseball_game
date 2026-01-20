@@ -7,12 +7,14 @@ import { ActionHand } from './ActionCard';
 import { HandDisplay, AvailableHandsGuide } from './HandDisplay';
 import { PlayerCardComponent } from './Card';
 import { ScoreBreakdown } from './ScoreBreakdown';
+import { Shop } from './Shop';
 
 export function GameBoard() {
   const {
     currentInning,
     score,
     totalPoints,
+    gold,
     outs,
     bases,
     currentPitcher,
@@ -35,6 +37,7 @@ export function GameBoard() {
     executeSelectedPlay,
     nextTurn,
     nextPitcher,
+    closeShop,
     resetGame,
   } = useGameStore();
 
@@ -54,6 +57,7 @@ export function GameBoard() {
         pitcherPoints={pitcherPoints}
         score={score}
         totalPoints={totalPoints}
+        gold={gold}
         outs={outs}
         discardsRemaining={discardsRemaining}
       />
@@ -263,6 +267,11 @@ export function GameBoard() {
               </div>
             )}
           </div>
+        )}
+
+        {/* 상점 */}
+        {phase === 'shop' && (
+          <Shop onClose={closeShop} />
         )}
 
         {/* 게임 종료 */}

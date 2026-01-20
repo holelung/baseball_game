@@ -139,8 +139,131 @@ export type GamePhase =
   | 'selectPlayer'  // 선수 선택 단계
   | 'selectCards'   // 트럼프 카드 선택 단계
   | 'showResult'    // 결과 표시 단계
+  | 'shop'          // 상점
   | 'pitcherDefeated' // 투수 강판
   | 'gameEnd';      // 게임 종료
+
+// ========== 상점 시스템 ==========
+
+// 상점 등급
+export type ShopTier = 'basic' | 'medium' | 'high';
+
+// 상점 아이템 타입
+export type ShopItemType = 'player' | 'playerUpgrade' | 'actionUpgrade' | 'coach' | 'voucher';
+
+// ========== 코치 시스템 ==========
+
+// 코치 효과 타입
+export type CoachEffectType =
+  | 'batting_all'       // 모든 선수 타율 증가
+  | 'power_all'         // 모든 선수 파워 증가
+  | 'extra_base'        // 장타 확률 증가
+  | 'speed_mode_bonus'  // 스피드 모드 포인트 보너스
+  | 'power_mode_bonus'  // 파워 모드 포인트 보너스
+  | 'contact_mode_bonus'// 컨택 모드 포인트 보너스
+  | 'extra_discard'     // 버리기 횟수 +1
+  | 'clutch_bonus'      // 2사 상황 안타 확률 증가
+  | 'run_bonus';        // 득점 시 추가 포인트
+
+// 코치 정보
+export interface Coach {
+  id: string;
+  name: string;
+  icon: string;
+  effectType: CoachEffectType;
+  effectValue: number;  // 효과 수치 (%, 절대값 등)
+  description: string;
+  price: number;
+}
+
+// ========== 바우처 시스템 ==========
+
+// 바우처 효과 타입
+export type VoucherEffectType =
+  | 'shop_discount'     // 상점 할인
+  | 'shop_extra_item'   // 상점 아이템 +1
+  | 'roster_expand'     // 로스터 확장
+  | 'rare_chance'       // 희귀 아이템 확률 증가
+  | 'gold_bonus'        // 골드 획득 증가
+  | 'starting_gold';    // 시작 골드 추가
+
+// 바우처 정보
+export interface Voucher {
+  id: string;
+  name: string;
+  icon: string;
+  effectType: VoucherEffectType;
+  effectValue: number;
+  description: string;
+  price: number;
+}
+
+// ========== 선수 강화 ==========
+
+// 선수 강화 타입
+export type PlayerUpgradeType =
+  | 'batting_training'  // 타율 훈련
+  | 'power_training'    // 파워 훈련
+  | 'speed_training'    // 스피드 훈련
+  | 'ability_grant';    // 새 능력 부여
+
+// 선수 강화 정보
+export interface PlayerUpgrade {
+  id: string;
+  upgradeType: PlayerUpgradeType;
+  name: string;
+  description: string;
+  price: number;
+  effectValue: number;  // 증가량
+}
+
+// ========== 액션 카드 강화 ==========
+
+// 액션 강화 타입
+export type ActionUpgradeType =
+  | 'stat_bonus'        // 특정 속성 카드 보너스
+  | 'mode_bonus'        // 특정 모드 보너스
+  | 'add_card'          // 덱에 카드 추가
+  | 'remove_card';      // 덱에서 카드 제거
+
+// 액션 강화 정보
+export interface ActionUpgrade {
+  id: string;
+  upgradeType: ActionUpgradeType;
+  name: string;
+  description: string;
+  price: number;
+  targetStat?: StatType;      // stat_bonus, add_card용
+  targetMode?: ActionMode;    // mode_bonus용
+  effectValue: number;
+}
+
+// 상점 아이템
+export interface ShopItem {
+  id: string;
+  type: ShopItemType;
+  name: string;
+  description: string;
+  price: number;
+  // 선수 카드인 경우
+  player?: PlayerCard;
+  rarity?: 'common' | 'rare' | 'epic' | 'legendary';
+  // 코치인 경우
+  coach?: Coach;
+  // 바우처인 경우
+  voucher?: Voucher;
+  // 선수 강화인 경우
+  playerUpgrade?: PlayerUpgrade;
+  // 액션 강화인 경우
+  actionUpgrade?: ActionUpgrade;
+}
+
+// 상점 상태
+export interface ShopState {
+  isOpen: boolean;
+  tier: ShopTier;
+  items: ShopItem[];
+}
 
 // ========== 투수 시스템 ==========
 
@@ -164,6 +287,9 @@ export interface GameState {
   score: number;              // 야구 점수 (득점)
   totalPoints: number;        // 총 포인트
 
+  // 골드 (상점 재화)
+  gold: number;
+
   // 투수 시스템
   currentPitcher: Pitcher | null;  // 현재 상대 투수
   pitcherPoints: number;           // 현재 투수에게 획득한 포인트
@@ -178,6 +304,7 @@ export interface GameState {
   playerHand: PlayerCard[];      // 선수 손패 (최초 3장, 이후 1장씩)
   selectedPlayer: PlayerCard | null; // 선택된 선수
   isFirstAtBat: boolean;         // 이닝 첫 타석 여부
+  maxRosterSize: number;         // 최대 선수 보유 수 (기본 12)
 
   // 액션 카드 덱 상태
   actionDeck: ActionCard[];        // 액션덱 (남은 카드)
@@ -192,6 +319,20 @@ export interface GameState {
 
   // 버리기 횟수 (투수당)
   discardsRemaining: number;
+
+  // 상점
+  shop: ShopState;
+
+  // 코치 (영구 효과)
+  coaches: Coach[];
+  maxCoaches: number;  // 최대 코치 슬롯 (기본 5)
+
+  // 바우처 (영구 효과)
+  vouchers: Voucher[];
+
+  // 액션 강화 보너스 (누적)
+  statBonuses: Record<StatType, number>;   // 속성별 포인트 보너스
+  modeBonuses: Record<ActionMode, number>; // 모드별 포인트 보너스
 }
 
 // 액션 결과 (기존 호환용)

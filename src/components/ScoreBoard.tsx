@@ -6,6 +6,7 @@ interface ScoreBoardProps {
   pitcherPoints: number;   // 현재 투수에게 획득한 포인트
   score: number;           // 야구 득점
   totalPoints: number;     // 총 포인트
+  gold: number;            // 상점 재화
   outs: number;
   discardsRemaining: number;
 }
@@ -16,6 +17,7 @@ export function ScoreBoard({
   pitcherPoints,
   score,
   totalPoints,
+  gold,
   outs,
   discardsRemaining
 }: ScoreBoardProps) {
@@ -64,7 +66,7 @@ export function ScoreBoard({
         </div>
       )}
 
-      <div className="grid grid-cols-4 gap-2 sm:gap-4 text-center">
+      <div className="grid grid-cols-5 gap-2 sm:gap-4 text-center">
         {/* 이닝 */}
         <div>
           <div className="text-gray-400 text-xs sm:text-sm">이닝</div>
@@ -81,8 +83,14 @@ export function ScoreBoard({
 
         {/* 총 포인트 */}
         <div>
-          <div className="text-gray-400 text-xs sm:text-sm">총 포인트</div>
+          <div className="text-gray-400 text-xs sm:text-sm">포인트</div>
           <div className="text-xl sm:text-3xl font-bold text-green-400">{totalPoints}P</div>
+        </div>
+
+        {/* 골드 */}
+        <div>
+          <div className="text-gray-400 text-xs sm:text-sm">골드</div>
+          <div className="text-xl sm:text-3xl font-bold text-yellow-500">{gold}G</div>
         </div>
 
         {/* 아웃카운트 */}
